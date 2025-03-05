@@ -1,5 +1,6 @@
 const productParamsDef = `
   $name: String,
+  $shortName: String,
   $type: String,
   $categoryId: String,
   $description: String,
@@ -11,17 +12,19 @@ const productParamsDef = `
   $customFieldsData: JSON,
   $attachment: AttachmentInput,
   $attachmentMore: [AttachmentInput],
+  $pdfAttachment: PdfAttachmentInput
   $vendorId: String,
+  $scopeBrandIds: [String]
   $uom: String,
   $subUoms: JSON,
-  $taxType: String,
-  $taxCode: String
+  $currency: String,
 `;
 
 const productCategoryParamsDef = `
   $name: String!,
   $code: String!,
   $parentId: String,
+  $scopeBrandIds: [String]
   $description: String,
   $attachment: AttachmentInput,
   $status: String,
@@ -34,6 +37,7 @@ const productCategoryParamsDef = `
 
 const productParams = `
   name: $name,
+  shortName: $shortName,
   type: $type,
   categoryId: $categoryId,
   description: $description,
@@ -45,17 +49,19 @@ const productParams = `
   customFieldsData: $customFieldsData,
   attachment: $attachment,
   attachmentMore: $attachmentMore,
+  pdfAttachment: $pdfAttachment,
   vendorId: $vendorId,
+  scopeBrandIds: $scopeBrandIds,
   uom: $uom,
   subUoms: $subUoms,
-  taxType: $taxType,
-  taxCode: $taxCode
+  currency: $currency
 `;
 
 const productCategoryParams = `
   name: $name,
   code: $code,
   parentId: $parentId,
+  scopeBrandIds: $scopeBrandIds,
   description: $description,
   attachment: $attachment,
   status: $status,
@@ -116,5 +122,5 @@ export default {
   productsRemove,
   productCategoryAdd,
   productCategoryEdit,
-  productsConfigsUpdate
+  productsConfigsUpdate,
 };

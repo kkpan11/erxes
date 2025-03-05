@@ -1,4 +1,3 @@
-import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
 import { filterXSS } from 'xss';
@@ -6,21 +5,46 @@ import { bulk, single } from './api';
 import { validateBulkPhones, validateSinglePhone } from './apiPhoneVerifier';
 import { connect } from './connection';
 import './cronJobs/verifier';
-import { initRedis } from './redisClient';
-import { debugBase, debugCrons, debugRequest } from './utils';
+
+import { debugCrons } from './utils';
 
 // load environment variables
 dotenv.config();
 
 const app = express();
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+const urlencodedMiddleware = express.urlencoded({
+  extended: true,
+}) as express.RequestHandler;
+const jsonMiddleware = express.json() as express.RequestHandler;
+
+// Use the explicitly typed middleware function
+app.use(urlencodedMiddleware);
+app.use(jsonMiddleware);
+
+app.get('/', (req, res) => {
+  // return do not panic, it's healthy
+  console.debug('health check request from', req.headers.origin);
+  const html = `<!DOCTYPE html>
+                  <html lang="en">
+                  <head>
+                    <meta charset="UTF-8">
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Health Check</title>
+                  </head>
+                  <body>
+                    <h1>Health status</h1>
+                    <p>It's healthy</p>
+                  </body>
+                  </html>`;
+  res.send(html);
+});
 
 app.post('/verify-single', async (req, res, next) => {
-  debugRequest(debugBase, req);
 
   const { email, phone, hostname } = req.body;
+  console.debug('single verification request from', hostname);
 
   if (email) {
     try {
@@ -42,10 +66,8 @@ app.post('/verify-single', async (req, res, next) => {
 });
 
 app.post('/verify-bulk', async (req, res, next) => {
-  debugRequest(debugBase, req);
-
   const { phones, emails, hostname } = req.body;
-
+  console.debug('bulk verification request from', hostname);
   if (phones) {
     try {
       const result = await validateBulkPhones(phones, hostname);
@@ -68,7 +90,6 @@ app.post('/verify-bulk', async (req, res, next) => {
 app.use((error, _req, res, _next) => {
   const msg = filterXSS(error.message);
 
-  debugBase(`Error: `, msg);
   res.status(500).send(msg);
 });
 
@@ -76,8 +97,6 @@ const { PORT } = process.env;
 
 app.listen(PORT, async () => {
   await connect();
-  initRedis();
-  debugBase(`Email verifier server is running on port ${PORT}`);
 });
 
 const { PORT_CRONS = 4700 } = process.env;

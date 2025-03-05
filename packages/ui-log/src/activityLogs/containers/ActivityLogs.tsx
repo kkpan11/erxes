@@ -1,15 +1,15 @@
-import * as compose from 'lodash.flowright';
+import * as compose from "lodash.flowright";
 
-import { ActivityLogQueryResponse, IActivityLog } from '../types';
-import { queries, subscriptions } from '../graphql';
+import { ActivityLogQueryResponse, IActivityLog } from "../types";
+import { queries, subscriptions } from "../graphql";
 
-import ActivityLogs from '../components/ActivityLogs';
-import { IUser } from '@erxes/ui/src//auth/types';
-import React from 'react';
-import { gql } from '@apollo/client';
-import { graphql } from '@apollo/client/react/hoc';
-import { withCurrentUser } from '@erxes/ui/src/auth';
-import { withProps } from '@erxes/ui/src/utils';
+import ActivityLogs from "../components/ActivityLogs";
+import { IUser } from "@erxes/ui/src/auth/types";
+import React from "react";
+import { gql } from "@apollo/client";
+import { graphql } from "@apollo/client/react/hoc";
+import { withCurrentUser } from "@erxes/ui/src/auth";
+import { withProps } from "@erxes/ui/src/utils";
 
 export type ActivityLogsProps = {
   contentId: string;
@@ -89,14 +89,15 @@ const WithData = withProps<WithDataProps>(
     graphql<WithDataProps, ActivityLogQueryResponse>(
       gql(queries.activityLogs),
       {
-        name: 'activityLogQuery',
+        name: "activityLogQuery",
         options: ({ contentId, contentType, activityType }: WithDataProps) => {
           return {
             variables: {
               contentId,
               contentType,
               activityType
-            }
+            },
+            fetchPolicy: "cache-and-network"
           };
         }
       }
@@ -112,7 +113,7 @@ export default class Wrapper extends React.Component<
     super(props);
 
     this.state = {
-      activityType: ''
+      activityType: ""
     };
   }
 
@@ -121,13 +122,8 @@ export default class Wrapper extends React.Component<
   };
 
   render() {
-    const {
-      contentId,
-      contentType,
-      target,
-      extraTabs,
-      activityRenderItem
-    } = this.props;
+    const { contentId, contentType, target, extraTabs, activityRenderItem } =
+      this.props;
     const { activityType } = this.state;
 
     return (

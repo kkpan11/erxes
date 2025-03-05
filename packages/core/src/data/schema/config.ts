@@ -8,12 +8,14 @@ export const types = `
 
   type ENV {
     USE_BRAND_RESTRICTIONS: String
+    RELEASE: String
   }
 `;
 
 export const queries = `
   search(value: String!): [JSON]
   configs: [Config]
+  configsByCode(codes: [String], pattern: String): [Config]
   configsGetVersion(releaseNotes: Boolean): JSON
   configsGetEnv: ENV
   configsConstants: JSON

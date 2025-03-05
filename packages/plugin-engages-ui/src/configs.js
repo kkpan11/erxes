@@ -1,30 +1,36 @@
 module.exports = {
+  srcDir: __dirname,
   name: "engages",
   port: 3001,
+  scope: "engages",
   exposes: {
     "./routes": "./src/routes.tsx",
+    "./automation": "./src/automation.tsx",
+    "./activityLog": "./src/ActivityLog.tsx"
   },
   routes: {
     url: "http://localhost:3001/remoteEntry.js",
     scope: "engages",
-    module: "./routes",
+    module: "./routes"
   },
+  automation: "./automation",
+  activityLog: "./activityLog",
   menus: [
     {
-      text: "Campaigns",
+      text: "Broadcast",
       url: "/campaigns",
       icon: "icon-megaphone",
       location: "mainNavigation",
-      permission: "showEngagesMessages",
+      permission: "showEngagesMessages"
     },
     {
-      text: "Campaign settings",
+      text: "Broadcast settings",
       to: "/settings/campaign-configs",
       image: "/images/icons/erxes-08.svg",
       location: "settings",
       scope: "engages",
       action: "engagesAll",
-      permissions: ["showEngagesMessages"],
-    },
-  ],
+      permissions: ["showEngagesMessages"]
+    }
+  ]
 };

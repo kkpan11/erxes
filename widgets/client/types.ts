@@ -1,6 +1,6 @@
-import { IBookingData } from './booking/types';
-import { ICallout } from './form/types';
-import { IAttachment, IWebsiteApp } from './messenger/types';
+import { BotPersistentMenuTypeMessenger, IAttachment, IBotData, IWebsiteApp } from "./messenger/types";
+
+import { ICallout } from "./form/types";
 
 export type ENV = {
   ROOT_URL: string;
@@ -91,9 +91,14 @@ export interface IIntegrationMessengerOnlineHours {
 }
 
 export interface IIntegrationLink {
-  twitter?: string;
   facebook?: string;
+  instagram?: string;
+  twitter?: string;
   youtube?: string;
+}
+
+export interface IIntegrationExternalLink {
+  url: string;
 }
 
 export interface IIntegrationMessengerDataMessagesItem {
@@ -113,6 +118,7 @@ export interface IIntegrationMessengerData {
     }>;
   };
   botEndpointUrl?: string;
+  botCheck?: boolean;
   botShowInitialMessage?: boolean;
   supporterIds: string[];
   notifyCustomer: boolean;
@@ -132,9 +138,15 @@ export interface IIntegrationMessengerData {
   showTimezone?: boolean;
   messages?: IIntegrationMessengerDataMessagesItem;
   links?: IIntegrationLink;
+  externalLinks?: IIntegrationExternalLink[];
+  botGreetMessage?: string;
+  persistentMenus?: BotPersistentMenuTypeMessenger[];
+  fromBot?: boolean;
+  botData?: IBotData;
+  getStarted?: boolean;
 }
 
-export interface IIntegrationLeadData {
+export interface ILeadData {
   loadType: string;
   successAction?: string;
   fromEmail?: string;
@@ -171,12 +183,11 @@ export interface IIntegration {
   languageCode?: string;
   tagIds?: string[];
   formId: string;
-  leadData: IIntegrationLeadData;
+  leadData: ILeadData;
   messengerData: IIntegrationMessengerData;
   twitterData: IIntegrationTwitterData;
   facebookData: IIntegrationFacebookData;
   uiOptions: IIntegrationUiOptions;
-  bookingData: IBookingData;
 }
 export interface IRule {
   _id: string;
@@ -216,4 +227,11 @@ export interface IProduct {
   attachment?: any;
   attachmentMore?: any[];
   category: IProductCategory;
+}
+
+export interface ICountry {
+  code: string;
+  name: string;
+  dialCode: string;
+  emoji: string;
 }

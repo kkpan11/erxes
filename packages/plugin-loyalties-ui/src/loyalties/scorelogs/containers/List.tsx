@@ -1,59 +1,15 @@
-import { Bulk } from '@erxes/ui/src/components';
-import { IRouterProps } from '@erxes/ui/src/types';
-import { withProps, router } from '@erxes/ui/src/utils/core';
-import { gql } from '@apollo/client';
-import * as compose from 'lodash.flowright';
+import { router } from '@erxes/ui/src/utils/core';
+
+import { gql, useQuery } from '@apollo/client';
 import React from 'react';
-import { graphql } from '@apollo/client/react/hoc';
-import { withRouter } from 'react-router-dom';
 import ScoreLogsListComponent from '../components/List';
 import { queries } from '../graphql';
+
 type Props = {
   queryParams: any;
-  history: any;
-};
-type FinalProps = {
-  scoreLogs: any;
-} & Props &
-  IRouterProps;
-
-type State = {
-  loading: boolean;
 };
 
-class ScoreLogsListContainer extends React.Component<FinalProps, State> {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    const { scoreLogs } = this.props;
-
-    const handlerefetch = variables => {
-      this.props.scoreLogs.refetch(variables);
-    };
-
-    const updatedProps = {
-      ...this.props,
-      scoreLogs: scoreLogs.scoreLogList?.list,
-      total: scoreLogs.scoreLogList?.total,
-      loading: scoreLogs.loading,
-      error: scoreLogs.error,
-      refetch: handlerefetch
-    };
-    const content = props => (
-      <ScoreLogsListComponent {...props} {...updatedProps} />
-    );
-
-    const refetch = () => {
-      this.props.scoreLogs.refetch();
-    };
-
-    return <Bulk content={content} refetch={refetch} />;
-  }
-}
-
-const generateParams = ({ queryParams }) => ({
+const generateParams = ({ queryParams }: { queryParams: any }) => ({
   ...router.generatePaginationParams(queryParams || {}),
   ids: queryParams.ids,
   campaignId: queryParams.campaignId,
@@ -61,17 +17,35 @@ const generateParams = ({ queryParams }) => ({
   ownerId: queryParams.ownerId,
   ownerType: queryParams.ownerType,
   searchValue: queryParams.searchValue,
-  sortField: queryParams.sortField,
-  sortDirection: Number(queryParams.sortDirection) || undefined
+  sortField: queryParams.orderType,
+  sortDirection: Number(queryParams.order) || undefined,
+  fromDate: queryParams.fromDate,
+  toDate: queryParams.toDate,
 });
 
-export default withProps<Props>(
-  compose(
-    graphql<Props>(gql(queries.getScoreLogs), {
-      name: 'scoreLogs',
-      options: ({ queryParams }) => ({
-        variables: generateParams({ queryParams })
-      })
-    })
-  )(withRouter<IRouterProps>(ScoreLogsListContainer))
-);
+const ScoreLogsListContainer = (props: Props) => {
+  const { queryParams } = props;
+
+  const { data, loading, refetch } = useQuery(gql(queries.getScoreLogs), {
+    variables: generateParams({ queryParams }),
+  });
+
+  const { data: statistic } = useQuery(gql(queries.getScoreLogStatistics), {
+    variables: generateParams({ queryParams }),
+  });
+
+  const { list, total } = data?.scoreLogList || {};
+
+  const updatedProps = {
+    ...props,
+    scoreLogs: list || [],
+    statistics: statistic?.scoreLogStatistics || {},
+    total: total || 0,
+    loading: loading,
+    refetch,
+  };
+
+  return <ScoreLogsListComponent {...updatedProps} />;
+};
+
+export default ScoreLogsListContainer;

@@ -1,14 +1,34 @@
-import { ICustomer } from '@erxes/ui-contacts/src/customers/types';
-import { IIntegration } from '@erxes/ui-inbox/src/settings/integrations/types';
-import { ITag } from '@erxes/ui-tags/src/types';
-import { IUser } from '@erxes/ui/src/auth/types';
-import { QueryResponse } from '@erxes/ui/src/types';
+import {
+  IFacebookComment,
+  IIntegration
+} from "@erxes/ui-inbox/src/settings/integrations/types";
+
+import { ICustomer } from "@erxes/ui-contacts/src/customers/types";
+import { ITag } from "@erxes/ui-tags/src/types";
+import { IUser } from "@erxes/ui/src/auth/types";
+import { QueryResponse } from "@erxes/ui/src/types";
 
 export interface IVideoCallData {
   url: string;
   name?: string;
   status?: string;
   recordingLinks?: string[];
+}
+
+export interface ICallHistory {
+  customerPhone: string;
+  operatorPhone: string;
+  callDuration: number;
+  callStartTime: Date;
+  callEndTime: Date;
+  callType: string;
+  callStatus: string;
+  sessionId: string;
+  updatedAt: Date;
+  createdAt: Date;
+  createdBy: string;
+  updatedBy: string;
+  recordUrl: string;
 }
 
 export interface IConversation {
@@ -36,17 +56,17 @@ export interface IConversation {
   customer: ICustomer;
   assignedUser: IUser;
   participatedUsers?: IUser[];
+  readUsers: IUser[];
   tags: ITag[];
   updatedAt: Date;
   idleTime: number;
   callProAudio?: string;
   videoCallData?: IVideoCallData;
+  callHistory?: ICallHistory;
 
   customFieldsData?: {
     [key: string]: any;
   };
-
-  bookingProductId?: string;
 }
 
 interface IEngageDataRules {
@@ -160,7 +180,6 @@ export interface IMessage {
   customer?: ICustomer;
   createdAt: Date;
   updatedAt: Date;
-  bookingWidgetData?: any;
   mid?: string;
 }
 
@@ -184,11 +203,27 @@ export type AddMessageMutationVariables = {
   attachments?: any;
 };
 
+export type EditMessageMutationVariables = {
+  _id: string;
+  content: string;
+  contentType?: string;
+  mentionedUserIds?: string[];
+  internal?: boolean;
+  attachments?: any;
+};
+
 export type AddMessageMutationResponse = {
   addMessageMutation: (doc: {
     variables: AddMessageMutationVariables;
     optimisticResponse: any;
     update: any;
+  }) => Promise<any>;
+};
+
+export type EditMessageMutationResponse = {
+  editMessageMutation: (doc: {
+    variables: EditMessageMutationVariables;
+    optimisticResponse: any;
   }) => Promise<any>;
 };
 
@@ -254,6 +289,7 @@ export type LastConversationQueryResponse = {
 export type ConversationsQueryResponse = {
   conversations: IConversation[];
   subscribeToMore: (variables) => void;
+  fetchMore?: any;
 } & QueryResponse;
 
 export type ConversationDetailQueryResponse = {
@@ -277,6 +313,11 @@ export type ConversationsTotalCountQueryResponse = {
 export type UnreadConversationsTotalCountQueryResponse = {
   conversationsTotalUnreadCount: number;
   subscribeToMore: (variables) => void;
+} & QueryResponse;
+
+export type FacebookCommentsQueryResponse = {
+  facebookGetComments: IFacebookComment[];
+  fetchMore: (variables) => void;
 } & QueryResponse;
 
 export type EditCustomFieldsMutationVariables = {

@@ -1,29 +1,60 @@
 import { isEnabled } from '@erxes/ui/src/utils/core';
 
+const vendorField = `
+  vendor {
+    _id
+    avatar
+    businessType
+    code
+    createdAt
+    customFieldsData
+    description
+    emails
+    industry
+    isSubscribed
+    links
+    location
+    mergedIds
+    modifiedAt
+    names
+    ownerId
+    parentCompanyId
+    phones
+    plan
+    primaryEmail
+    primaryName
+    primaryPhone
+    score
+    size
+    tagIds
+    trackedData
+    website
+  }
+`;
+
 const productFields = `
   _id
   name
+  shortName
   type
   code
   categoryId
   vendorId
+  ${vendorField}
+  scopeBrandIds
   status,
   description
   unitPrice
   barcodes
   variants
   barcodeDescription
-  ${
-    isEnabled('tags')
-      ? `
-    getTags {
-      _id
-      name
-      colorCode
-    }
-    `
-      : ``
+
+  getTags {
+    _id
+    name
+    colorCode
   }
+    
   tagIds
   createdAt
   category {
@@ -43,10 +74,23 @@ const productFields = `
     size
     type
   }
+  pdfAttachment {
+    pdf {
+      name
+      url
+      type
+      size
+    }
+    pages {
+      name
+      url
+      type
+      size
+      }
+    }
   uom
   subUoms
-  taxType
-  taxCode
+  currency
 `;
 
 const products = `
@@ -57,13 +101,16 @@ const products = `
     $status: String,
     $searchValue: String,
     $vendorId: String,
+    $brand: String,
     $perPage: Int,
-    $page: Int $ids: [String],
+    $page: Int
+    $ids: [String],
     $excludeIds: Boolean,
     $pipelineId: String,
     $boardId: String,
     $segment: String,
-    $segmentData: String
+    $segmentData: String,
+    $image: String,
   ) {
     products(
       type: $type,
@@ -72,13 +119,16 @@ const products = `
       status: $status,
       searchValue: $searchValue,
       vendorId: $vendorId,
+      brand: $brand,
       perPage: $perPage,
-      page: $page ids: $ids,
+      page: $page
+      ids: $ids,
       excludeIds: $excludeIds,
       pipelineId: $pipelineId,
       boardId: $boardId,
       segment: $segment,
-      segmentData: $segmentData
+      segmentData: $segmentData,
+      image: $image,
     ) {
       ${productFields}
     }
@@ -95,13 +145,14 @@ const productDetail = `
 `;
 
 const productCategories = `
-  query productCategories($status: String) {
-    productCategories(status: $status) {
+  query productCategories($status: String, $brand: String) {
+    productCategories(status: $status, brand: $brand) {
       _id
       name
       order
       code
       parentId
+      scopeBrandIds
       description
       status
       meta
@@ -131,6 +182,9 @@ const uoms = `
       name
       code
       createdAt
+      isForSubscription
+      subscriptionConfig
+      timely
     }
   }
 `;
@@ -153,6 +207,12 @@ const productsConfigs = `
   }
 `;
 
+const configs = `
+  query configsGetValue($code: String!) {
+    configsGetValue(code: $code)
+  }
+`;
+
 export default {
   productFields,
   products,
@@ -160,5 +220,6 @@ export default {
   productCategories,
   productsConfigs,
   uoms,
-  uomsTotalCount
+  uomsTotalCount,
+  configs,
 };

@@ -13,6 +13,8 @@ export interface ILink {
   [key: string]: string;
 }
 
+
+
 export interface IUser {
   createdAt?: Date;
   code?: string;
@@ -43,6 +45,7 @@ export interface IUserDocument extends IUser, Document {
   _id: string;
   emailSignatures?: IEmailSignatureDocument[];
   details?: IDetailDocument;
+  appId?: string;
 }
 
 export interface IContext {
@@ -61,7 +64,7 @@ export interface IContext {
     IntegrationsAPI: any;
     HelpersApi: any;
   };
-  dataLoaders: any;
+  dataLoaders: any; 
 }
 
 export interface IColumnLabel {
@@ -113,8 +116,7 @@ export const customFieldSchema = new Schema(
       coordinates: {
         type: [Number],
         optional: true
-      },
-      required: false
+      }
     }
   },
   { _id: false }
@@ -160,4 +162,9 @@ export interface IAttachment {
   url: string;
   size: number;
   type: string;
+}
+
+export interface IPdfAttachment {
+  pdf?: IAttachment;
+  pages: IAttachment[];
 }

@@ -1,6 +1,58 @@
-import styled, { css } from 'styled-components';
-import styledTS from 'styled-components-ts';
-import { colors, dimensions } from '@erxes/ui/src/styles/';
+import styled, { css } from "styled-components";
+import styledTS from "styled-components-ts";
+import { colors, dimensions } from "@erxes/ui/src/styles/";
+import { rgba } from "@erxes/ui/src/styles/ecolor";
+import { SidebarList } from '@erxes/ui/src/layout/styles';
+
+export const CustomRangeContainer = styled.div`
+  display: flex;
+  align-items: flex-end;
+  > div {
+    flex: 1;
+    margin-right: 8px;
+    input[type='text'] {
+      border: none;
+      width: 100%;
+      height: 34px;
+      padding: 5px 0;
+      color: #444;
+      border-bottom: 1px solid;
+      border-color: #ddd;
+      background: none;
+      border-radius: 0;
+      box-shadow: none;
+      font-size: 13px;
+    }
+  }
+`;
+
+export const FilterContainer = styled.div`
+  padding: 10px 20px;
+`;
+
+export const ExtraButtons = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 2px 0;
+
+  > div {
+    cursor: pointer;
+  }
+`;
+
+export const BoxContainer = styled(SidebarList)`
+
+  padding-top: 10px;
+
+  > li, > a > li {
+    padding: 6px 0 !important;
+  };
+
+  > a {
+    padding: 0;
+    font-weight: 500;
+  }
+`;
 
 export const LoyaltyAmount = styled.div`
   font-weight: 500;
@@ -18,7 +70,6 @@ export const SettingsContent = styled.div`
 
 export const ContentBox = styled.div`
   padding: ${dimensions.coreSpacing}px;
-  max-width: 640px;
   margin: 0 auto;
   text-align: center;
 `;
@@ -84,11 +135,12 @@ export const Card = styled.div`
   text-align: center;
 `;
 
-export const Row = styled.div`
+export const Row = styledTS<{ $justifyContent?: string }>(styled.div)`
   width: 100%;
   display: flex;
   flex-direction: row;
   padding-top: ${dimensions.coreSpacing}px;
+  ${({ $justifyContent }) => ($justifyContent ? `justify-content: ${$justifyContent};` : "")}
 
   @media (max-width: 1170px) {
     flex-direction: column;
@@ -98,7 +150,7 @@ export const Row = styled.div`
 
 export const Badge = styled.div`
   border-radius: 15px;
-  background-color: ${props => props.color};
+  background-color: ${(props) => props.color};
   font-size: 11px;
   max-width: 50px;
   color: white;
@@ -152,11 +204,76 @@ export const Indicator = styledTS<{ color: string }>(styled.div)`
   border-radius: 50%;
   width: 10px; 
   height: 10px;
-  background: ${props => props.color}
+  background: ${(props) => props.color}
 `;
 
 export const FormFooter = styled.div`
   display: flex;
   gap: 15px;
   justify-content: flex-end;
+`;
+
+export const OwnerBox = styledTS<{ $isSelected?: boolean }>(styled.div)`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+  color: ${colors.colorCoreGray};
+  padding: 10px 0;
+  cursor: pointer;
+  box-shadow: ${(props) =>
+    props.$isSelected
+      ? `0 10px 20px ${rgba(colors.colorCoreDarkGray, 0.12)}`
+      : `0 6px 10px 1px ${rgba(colors.colorCoreDarkGray, 0.08)}`} ;
+  border-radius: ${dimensions.unitSpacing / 2 - 1}px;
+  transition: all 0.25s ease;
+  border: 1px ${(props) => (props.$isSelected ? "solid" : "dashed")}
+    ${(props) =>
+      props.$isSelected ? colors.colorSecondary : "rgba(0, 0, 0, 0.12)"};
+
+  > i {
+    font-size: 28px;
+  }
+
+  > span {
+
+  }
+
+`;
+
+export const AttributeTrigger = styled.span`
+  color: ${colors.colorSecondary};
+  font-weight: 500;
+`;
+
+export const Attributes = styled.ul`
+  list-style: none;
+  margin: 0;
+  right: 20px;
+  max-height: 200px;
+  min-width: 200px;
+  overflow: auto;
+  padding: ${dimensions.unitSpacing}px;
+  border-radius: ${dimensions.unitSpacing - 5}px;
+
+  > div {
+    padding: 0;
+  }
+
+  b {
+    margin-bottom: ${dimensions.unitSpacing + 10}px;
+    color: black;
+  }
+
+  li {
+    color: ${colors.colorCoreGray};
+    padding-bottom: ${dimensions.unitSpacing - 5}px;
+    cursor: pointer;
+    font-weight: 400;
+    transition: all ease 0.3s;
+
+    &:hover {
+      color: ${colors.textPrimary};
+    }
+  }
 `;

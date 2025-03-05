@@ -10,14 +10,17 @@ export const types = `
     user: User
     group: UsersGroup
   }
-  type PermissionModule {
-    name: String
-    description: String
-  }
+
   type PermissionAction {
     name: String
     description: String
     module: String
+  }
+
+  type PermissionModule {
+    name: String
+    description: String
+    actions: [PermissionAction]
   }
 
   type UsersGroup {
@@ -26,6 +29,8 @@ export const types = `
     description: String
     memberIds: [String]
     members: [User]
+    branchIds: [String]
+    departmentIds:[String]
   }
 `;
 
@@ -41,6 +46,8 @@ const commonUserGroupParams = `
   name: String!,
   description: String,
   memberIds: [String],
+  branchIds: [String],
+  departmentIds: [String],
 `;
 
 export const queries = `

@@ -24,7 +24,9 @@ import {
   Loyalties as LoyaltyMutations,
   ScoreLogs as ScoreLogMutations,
   Assignments as AssignmentMutations,
-  AssignmentCampaigns as AssignmentCampaignMutations
+  AssignmentCampaigns as AssignmentCampaignMutations,
+  ScoreCampaigns as scoreCampaignMutations,
+  voucherCodes as voucherCodeMutations,
 } from './mutations';
 import {
   Donates as DonateQueries,
@@ -38,7 +40,8 @@ import {
   ScoreLogs as ScoreLogQueries,
   Loyalties as LoyaltyQueries,
   Assignments as AssignmentQueries,
-  AssignmentCampaigns as AssignmentCampaignQueries
+  AssignmentCampaigns as AssignmentCampaignQueries,
+  ScoreCampaigns as ScoreCampaignQueries,
 } from './queries';
 const resolvers: any = async serviceDiscovery => ({
   ...customScalars,
@@ -66,7 +69,9 @@ const resolvers: any = async serviceDiscovery => ({
     ...LoyaltyMutations,
     ...ScoreLogMutations,
     ...AssignmentMutations,
-    ...AssignmentCampaignMutations
+    ...AssignmentCampaignMutations,
+    ...scoreCampaignMutations,
+    ...voucherCodeMutations
   },
   Query: {
     ...loyaltyConfigQueries,
@@ -81,8 +86,9 @@ const resolvers: any = async serviceDiscovery => ({
     ...ScoreLogQueries,
     ...LoyaltyQueries,
     ...AssignmentQueries,
-    ...AssignmentCampaignQueries
-  }
+    ...AssignmentCampaignQueries,
+    ...ScoreCampaignQueries,
+  },
 });
 
 export default resolvers;

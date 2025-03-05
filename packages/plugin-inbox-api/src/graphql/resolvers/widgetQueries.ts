@@ -1,16 +1,12 @@
-import * as momentTz from 'moment-timezone';
+import * as momentTz from "moment-timezone";
 
-import { IIntegrationDocument } from '../../models/definitions/integrations';
+import { IContext, IModels } from "../../connectionResolver";
+import { sendCoreMessage, sendKnowledgeBaseMessage } from "../../messageBroker";
 
-import { getOrCreateEngageMessage } from '../../widgetUtils';
-
-import { IBrowserInfo } from '@erxes/api-utils/src/definitions/common';
-import {
-  sendCoreMessage,
-  sendFormsMessage,
-  sendKnowledgeBaseMessage
-} from '../../messageBroker';
-import { IContext, IModels } from '../../connectionResolver';
+import { IBrowserInfo } from "@erxes/api-utils/src/definitions/common";
+import { IIntegrationDocument } from "../../models/definitions/integrations";
+import { getOrCreateEngageMessage } from "../../widgetUtils";
+import { sendAutomationsMessage } from "../../../src/messageBroker";
 
 const isMessengerOnline = async (
   models: IModels,
@@ -21,12 +17,8 @@ const isMessengerOnline = async (
     return false;
   }
 
-  const {
-    availabilityMethod,
-    isOnline,
-    onlineHours,
-    timezone
-  } = integration.messengerData;
+  const { availabilityMethod, isOnline, onlineHours, timezone } =
+    integration.messengerData;
 
   const modifiedIntegration = {
     ...(integration.toJSON ? integration.toJSON() : integration),
@@ -49,7 +41,7 @@ const fetchUsers = async (
 ) => {
   const users = await sendCoreMessage({
     subdomain,
-    action: 'users.find',
+    action: "users.find",
     data: { query },
     isRPC: true,
     defaultValue: []
@@ -71,26 +63,26 @@ const fetchUsers = async (
 const getWidgetMessages = (models: IModels, conversationId: string) => {
   return models.ConversationMessages.find({
     conversationId,
-    internal: false,
-    fromBot: { $exists: false }
+    internal: false
+    // fromBot: { $exists: false }
   }).sort({
     createdAt: 1
   });
 };
 
 export default {
-  widgetsGetMessengerIntegration(
+  async widgetsGetMessengerIntegration(
     _root,
     args: { brandCode: string },
     { models }: IContext
   ) {
     return models.Integrations.getWidgetIntegration(
       args.brandCode,
-      'messenger'
+      "messenger"
     );
   },
 
-  widgetsConversations(
+  async widgetsConversations(
     _root,
     args: { integrationId: string; customerId?: string; visitorId?: string },
     { models }: IContext
@@ -103,51 +95,89 @@ export default {
 
     return models.Conversations.find(query).sort({ updatedAt: -1 });
   },
-
   async widgetsConversationDetail(
     _root,
     args: { _id: string; integrationId: string },
     { models, subdomain }: IContext
   ) {
-    const { _id, integrationId } = args;
+    try {
+      const { _id, integrationId } = args;
 
-    const conversation = await models.Conversations.findOne({
-      _id,
-      integrationId
-    });
-    const integration = await models.Integrations.findOne({
-      _id: integrationId
-    });
+      const [conversation, integration] = await Promise.all([
+        models.Conversations.findOne({ _id, integrationId }),
+        models.Integrations.findOne({ _id: integrationId })
+      ]);
 
-    // When no one writes a message
-    if (!conversation && integration) {
-      return {
-        messages: [],
-        isOnline: await isMessengerOnline(models, integration)
+      if (!integration) return null;
+      const getStarted = await sendAutomationsMessage({
+        subdomain,
+        action: "trigger.find",
+        data: {
+          query: {
+            triggerType: "inbox:messages",
+            botId: integration._id
+          }
+        },
+        isRPC: true
+      }).catch((error) => {
+        throw error;
+      });
+      const getStartedCondition = (
+        getStarted[0]?.triggers[0]?.config?.conditions || []
+      ).find((condition) => condition.type === "getStarted");
+      const messengerData = integration.messengerData || {
+        supporterIds: [],
+        persistentMenus: [],
+        botGreetMessage: ""
       };
+
+      if (!conversation) {
+        return {
+          persistentMenus: messengerData.persistentMenus,
+          botGreetMessage: messengerData.botGreetMessage,
+          getStarted: getStartedCondition
+            ? getStartedCondition.isSelected
+            : false,
+          messages: [],
+          isOnline: await isMessengerOnline(models, integration)
+        };
+      }
+
+      const [messages, participatedUsers, readUsers, supporters, isOnline] =
+        await Promise.all([
+          getWidgetMessages(models, conversation._id),
+          fetchUsers(models, subdomain, integration, {
+            _id: { $in: conversation.participatedUserIds }
+          }),
+          fetchUsers(models, subdomain, integration, {
+            _id: { $in: conversation.readUserIds }
+          }),
+          fetchUsers(models, subdomain, integration, {
+            _id: { $in: messengerData.supporterIds }
+          }),
+          isMessengerOnline(models, integration)
+        ]);
+
+      return {
+        _id,
+        persistentMenus: messengerData.persistentMenus,
+        botGreetMessage: messengerData.botGreetMessage,
+        getStarted: getStartedCondition
+          ? getStartedCondition.isSelected
+          : false,
+        messages,
+        isOnline,
+        operatorStatus: conversation.operatorStatus,
+        participatedUsers,
+        readUsers,
+        supporters
+      };
+    } catch (error) {
+      throw new Error("Failed to fetch conversation details");
     }
-
-    if (!conversation || !integration) {
-      return null;
-    }
-
-    const messengerData = integration.messengerData || { supporterIds: [] };
-
-    return {
-      _id,
-      messages: await getWidgetMessages(models, conversation._id),
-      isOnline: await isMessengerOnline(models, integration),
-      operatorStatus: conversation.operatorStatus,
-      participatedUsers: await fetchUsers(models, subdomain, integration, {
-        _id: { $in: conversation.participatedUserIds }
-      }),
-      supporters: await fetchUsers(models, subdomain, integration, {
-        _id: { $in: messengerData.supporterIds }
-      })
-    };
   },
 
-  widgetsMessages(
+  async widgetsMessages(
     _root,
     args: { conversationId: string },
     { models }: IContext
@@ -157,7 +187,7 @@ export default {
     return getWidgetMessages(models, conversationId);
   },
 
-  widgetsUnreadCount(
+  async widgetsUnreadCount(
     _root,
     args: { conversationId: string },
     { models }: IContext
@@ -251,41 +281,8 @@ export default {
 
   async widgetsProductCategory(_root, { _id }: { _id: string }) {
     return {
-      __typename: 'ProductCategory',
+      __typename: "ProductCategory",
       _id
-    };
-  },
-
-  async widgetsBookingProductWithFields(
-    _root,
-    { _id }: { _id: string },
-    { subdomain }: IContext
-  ) {
-    const fields = await sendFormsMessage({
-      subdomain,
-      action: 'fields.find',
-      data: {
-        query: {
-          contentType: 'product'
-        },
-        sort: {
-          order: 1
-        }
-      },
-      isRPC: true
-    });
-
-    return {
-      fields: fields.map(field => {
-        return {
-          __typename: 'Field',
-          _id: field._id
-        };
-      }),
-      product: {
-        __typename: 'Product',
-        _id
-      }
     };
   },
 
@@ -299,16 +296,16 @@ export default {
     args: { topicId: string; searchString: string },
     { subdomain }: IContext
   ) {
-    const { topicId, searchString = '' } = args;
+    const { topicId, searchString = "" } = args;
 
     return sendKnowledgeBaseMessage({
       subdomain,
-      action: 'articles.find',
+      action: "articles.find",
       data: {
         query: {
           topicId,
-          content: { $regex: `.*${searchString.trim()}.*`, $options: 'i' },
-          status: 'publish'
+          content: { $regex: `.*${searchString.trim()}.*`, $options: "i" },
+          status: "publish"
         }
       },
       isRPC: true
@@ -327,7 +324,7 @@ export default {
 
     const topic = await sendKnowledgeBaseMessage({
       ...commonOptions,
-      action: 'topics.findOne',
+      action: "topics.findOne",
       data: {
         query: {
           _id
@@ -338,7 +335,7 @@ export default {
     if (topic && topic.createdBy) {
       const user = await sendCoreMessage({
         ...commonOptions,
-        action: 'users.findOne',
+        action: "users.findOne",
         data: {
           _id: topic.createdBy
         },
@@ -347,9 +344,9 @@ export default {
 
       sendCoreMessage({
         subdomain,
-        action: 'registerOnboardHistory',
+        action: "registerOnboardHistory",
         data: {
-          type: 'knowledgeBaseInstalled',
+          type: "knowledgeBaseInstalled",
           user
         }
       });

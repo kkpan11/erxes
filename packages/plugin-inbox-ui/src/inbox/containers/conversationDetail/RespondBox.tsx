@@ -1,45 +1,52 @@
-import { AppConsumer } from 'coreui/appContext';
-import { gql } from '@apollo/client';
-import { fromJS } from 'immutable';
 import * as compose from 'lodash.flowright';
-import debounce from 'lodash/debounce';
-import { IAttachmentPreview } from '@erxes/ui/src/types';
-import RespondBox from '../../components/conversationDetail/workarea/RespondBox';
-import { queries } from '@erxes/ui-inbox/src/inbox/graphql';
-import React from 'react';
-import { graphql } from '@apollo/client/react/hoc';
-import { IUser } from '@erxes/ui/src/auth/types';
-import { readFile, withProps } from '@erxes/ui/src/utils';
-import { ResponseTemplatesQueryResponse } from '../../../settings/responseTemplates/types';
-import { UsersQueryResponse } from '@erxes/ui/src/auth/types';
+
 import {
   AddMessageMutationVariables,
-  IConversation
+  EditMessageMutationVariables,
+  IConversation,
+  IMessage,
 } from '@erxes/ui-inbox/src/inbox/types';
+import { gql, useLazyQuery } from '@apollo/client';
+import { readFile, withProps } from '@erxes/ui/src/utils';
+
+import { AppConsumer } from 'coreui/appContext';
+import { IAttachmentPreview } from '@erxes/ui/src/types';
+import { IUser } from '@erxes/ui/src/auth/types';
+import React from 'react';
+import RespondBox from '../../components/conversationDetail/workarea/RespondBox';
+import { ResponseTemplatesQueryResponse } from '../../../settings/responseTemplates/types';
+import { UsersQueryResponse } from '@erxes/ui/src/auth/types';
+import debounce from 'lodash/debounce';
+import { graphql } from '@apollo/client/react/hoc';
+import { queries } from '@erxes/ui-inbox/src/inbox/graphql';
 
 type Props = {
   conversation: IConversation;
   showInternal: boolean;
+  disableInternalState: boolean;
   setAttachmentPreview: (attachmentPreview: IAttachmentPreview) => void;
   addMessage: (doc: {
-    variables: AddMessageMutationVariables;
+    variables: AddMessageMutationVariables & EditMessageMutationVariables;
     optimisticResponse: any;
     kind: string;
     callback: (error: Error) => void;
   }) => void;
   refetchMessages: () => void;
   refetchDetail: () => void;
+  editMessage?: IMessage;
+  onEditMessageId?: (id: string) => void;
 };
 
 type FinalProps = {
   responseTemplatesQuery: ResponseTemplatesQueryResponse;
-  usersQuery: UsersQueryResponse;
   search: (value: string) => void;
 } & Props & { currentUser: IUser };
 
 interface ITeamMembers {
-  _id: string;
-  name: string;
+  id: string;
+  username: string;
+  email?: string;
+  fullName?: string;
   title?: string;
   avatar?: string;
 }
@@ -47,12 +54,35 @@ interface ITeamMembers {
 const RespondBoxContainer = (props: FinalProps) => {
   const {
     conversation,
-    usersQuery,
     addMessage,
     responseTemplatesQuery,
     currentUser,
-    search
+    search,
   } = props;
+
+  const [fetchMentions] = useLazyQuery(gql(queries.userList));
+
+  const getVariables = (query: string) => {
+    return { searchValue: query };
+  };
+
+  const extractFunction = (queryResult: UsersQueryResponse) => {
+    const mentionUsers: ITeamMembers[] = [];
+    for (const user of queryResult.users || []) {
+      mentionUsers.push({
+        id: user._id,
+        username: user.username?.trim(),
+        email: user.email?.trim(),
+        fullName: user.details && user.details.fullName?.trim(),
+        title: user.details && user.details.position,
+        avatar:
+          user.details &&
+          user.details.avatar &&
+          readFile(user.details.avatar, 44),
+      });
+    }
+    return mentionUsers;
+  };
 
   const onSearchChange = (searchValue: string) => {
     if (searchValue) {
@@ -61,92 +91,89 @@ const RespondBoxContainer = (props: FinalProps) => {
   };
 
   const sendMessage = (
-    variables: AddMessageMutationVariables,
-    callback: (error: Error) => void
+    variables: AddMessageMutationVariables & EditMessageMutationVariables,
+    callback: (error: Error) => void,
   ) => {
-    const {
-      conversationId,
-      content,
-      attachments,
-      internal,
-      contentType
-    } = variables;
+    const { content, attachments, internal, contentType } = variables;
+
+    // Type guard to check if variables is of type EditMessageMutationVariables
+    const isEditMessage = (vars: typeof variables) => {
+      return (vars as EditMessageMutationVariables)._id !== undefined;
+    };
+
+    const _id = isEditMessage(variables) ? variables._id : undefined;
 
     let optimisticResponse;
 
-    optimisticResponse = {
-      __typename: 'Mutation',
-      conversationMessageAdd: {
-        __typename: 'ConversationMessage',
-        _id: Math.round(Math.random() * -1000000),
-        content,
-        contentType,
-        attachments,
-        internal,
-        mentionedUserIds: [],
-        conversationId,
-        customerId: Math.random(),
-        userId: currentUser._id,
-        createdAt: new Date(),
-        messengerAppData: null,
-        isCustomerRead: false,
-        fromBot: false,
-        formWidgetData: null,
-        bookingWidgetData: null,
-        botData: null,
-        mailData: null,
-        user: null,
-        customer: null,
-        videoCallData: null,
-        mid: Math.random().toString()
-      }
+    const generateId = () =>
+      Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+    const baseMessageProps = {
+      __typename: 'ConversationMessage',
+      content,
+      contentType,
+      attachments,
+      internal,
+      mentionedUserIds: [],
+      userId: currentUser._id,
+      customerId: generateId(),
+      createdAt: new Date(),
+      messengerAppData: null,
+      isCustomerRead: false,
+      fromBot: false,
+      formWidgetData: null,
+      botData: null,
+      mailData: null,
+      user: null,
+      customer: null,
+      videoCallData: null,
+      mid: generateId(),
     };
 
+    const mutation = _id
+      ? {
+          conversationMessageEdit: {
+            ...baseMessageProps,
+            _id,
+            updatedAt: new Date(),
+          },
+        }
+      : {
+          conversationMessageAdd: {
+            ...baseMessageProps,
+            conversationId: variables.conversationId,
+          },
+        };
+
+    optimisticResponse = {
+      __typename: 'Mutation',
+      ...mutation,
+    };
     addMessage({
       variables,
       optimisticResponse,
       kind: conversation.integration.kind,
-      callback
+      callback,
     });
   };
-
-  const teamMembers: ITeamMembers[] = [];
-
-  for (const user of usersQuery.users || []) {
-    teamMembers.push({
-      _id: user._id,
-      name: user.username,
-      title: user.details && user.details.position,
-      avatar:
-        user.details && user.details.avatar && readFile(user.details.avatar, 44)
-    });
-  }
-
+  const refetchResponseTemplates = (content) => [
+    responseTemplatesQuery.refetch({ searchValue: content }),
+  ];
   const updatedProps = {
     ...props,
     onSearchChange,
     sendMessage,
     responseTemplates: responseTemplatesQuery.responseTemplates || [],
-    teamMembers: fromJS(teamMembers.filter(member => member.name))
+    mentionSuggestion: { getVariables, fetchMentions, extractFunction },
+    refetchResponseTemplates,
   };
 
   return <RespondBox {...updatedProps} />;
 };
 
 const withQuery = () =>
-  withProps<Props & { currentUser: IUser } & { searchValue: string }>(
+  withProps<Props & { currentUser: IUser }>(
     compose(
-      graphql<Props & { searchValue: string }, UsersQueryResponse>(
-        gql(queries.userList),
-        {
-          name: 'usersQuery',
-          options: ({ searchValue }) => ({
-            variables: {
-              searchValue
-            }
-          })
-        }
-      ),
       graphql<Props, ResponseTemplatesQueryResponse>(
         gql(queries.responseTemplateList),
         {
@@ -154,13 +181,13 @@ const withQuery = () =>
           options: () => {
             return {
               variables: {
-                perPage: 200
-              }
+                perPage: 20,
+              },
             };
-          }
-        }
-      )
-    )(RespondBoxContainer)
+          },
+        },
+      ),
+    )(RespondBoxContainer),
   );
 
 class Wrapper extends React.Component<

@@ -6,25 +6,25 @@ export const moduleObjects = {
       {
         name: 'brandsAll',
         description: 'All',
-        use: ['showBrands', 'manageBrands', 'exportBrands', 'removeBrands']
+        use: ['showBrands', 'manageBrands', 'exportBrands', 'removeBrands'],
       },
       {
         name: 'manageBrands',
-        description: 'Manage brands'
+        description: 'Manage brands',
       },
       {
         name: 'showBrands',
-        description: 'Show brands'
+        description: 'Show brands',
       },
       {
         name: 'exportBrands',
-        description: 'Export brands'
+        description: 'Export brands',
       },
       {
         name: 'removeBrands',
-        description: 'Remove brands'
-      }
-    ]
+        description: 'Remove brands',
+      },
+    ],
   },
   permissions: {
     name: 'permissions',
@@ -38,30 +38,30 @@ export const moduleObjects = {
           'showPermissions',
           'showPermissionModules',
           'showPermissionActions',
-          'exportPermissions'
-        ]
+          'exportPermissions',
+        ],
       },
       {
         name: 'managePermissions',
-        description: 'Manage permissions'
+        description: 'Manage permissions',
       },
       {
         name: 'showPermissions',
-        description: 'Show permissions'
+        description: 'Show permissions',
       },
       {
         name: 'showPermissionModules',
-        description: 'Show permissions modules'
+        description: 'Show permissions modules',
       },
       {
         name: 'showPermissionActions',
-        description: 'Show permissions actions'
+        description: 'Show permissions actions',
       },
       {
         name: 'exportPermissions',
-        description: 'Export permissions'
-      }
-    ]
+        description: 'Export permissions',
+      },
+    ],
   },
   usersGroups: {
     name: 'usersGroups',
@@ -70,17 +70,17 @@ export const moduleObjects = {
       {
         name: 'usersGroupsAll',
         description: 'All',
-        use: ['showUsersGroups', 'manageUsersGroups']
+        use: ['showUsersGroups', 'manageUsersGroups'],
       },
       {
         name: 'manageUsersGroups',
-        description: 'Manage users groups'
+        description: 'Manage users groups',
       },
       {
         name: 'showUsersGroups',
-        description: 'Show users groups'
-      }
-    ]
+        description: 'Show users groups',
+      },
+    ],
   },
   users: {
     name: 'users',
@@ -94,30 +94,30 @@ export const moduleObjects = {
           'usersEdit',
           'usersInvite',
           'usersSetActiveStatus',
-          'exportUsers'
-        ]
+          'exportUsers',
+        ],
       },
       {
         name: 'showUsers',
-        description: 'Show team members'
+        description: 'Show team members',
       },
       {
         name: 'usersSetActiveStatus',
-        description: 'Set active/deactive team member'
+        description: 'Set active/deactive team member',
       },
       {
         name: 'usersEdit',
-        description: 'Update team member'
+        description: 'Update team member',
       },
       {
         name: 'usersInvite',
-        description: 'Invite team member'
+        description: 'Invite team member',
       },
       {
         name: 'exportUsers',
-        description: 'Export team members'
-      }
-    ]
+        description: 'Export team members',
+      },
+    ],
   },
   importHistories: {
     name: 'importHistories',
@@ -126,21 +126,21 @@ export const moduleObjects = {
       {
         name: 'importHistoriesAll',
         description: 'All',
-        use: ['importHistories', 'removeImportHistories', 'importXlsFile']
+        use: ['importHistories', 'removeImportHistories', 'importXlsFile'],
       },
       {
         name: 'importXlsFile',
-        description: 'Import xls files'
+        description: 'Import xls files',
       },
       {
         name: 'removeImportHistories',
-        description: 'Remove import histories'
+        description: 'Remove import histories',
       },
       {
         name: 'importHistories',
-        description: 'Show import histories'
-      }
-    ]
+        description: 'Show import histories',
+      },
+    ],
   },
   generalSettings: {
     name: 'generalSettings',
@@ -149,17 +149,17 @@ export const moduleObjects = {
       {
         name: 'generalSettingsAll',
         description: 'All',
-        use: ['manageGeneralSettings', 'showGeneralSettings']
+        use: ['manageGeneralSettings', 'showGeneralSettings'],
       },
       {
         name: 'showGeneralSettings',
-        description: 'Show general settings'
+        description: 'Show general settings',
       },
       {
         name: 'manageGeneralSettings',
-        description: 'Manage general settings'
-      }
-    ]
+        description: 'Manage general settings',
+      },
+    ],
   },
   structures: {
     name: 'structures',
@@ -172,26 +172,26 @@ export const moduleObjects = {
           'showStructure',
           'addStructure',
           'editStructure',
-          'removeStructure'
-        ]
+          'removeStructure',
+        ],
       },
       {
         name: 'showStructure',
-        description: 'Show a structure'
+        description: 'Show a structure',
       },
       {
         name: 'addStructure',
-        description: 'Create a structure'
+        description: 'Create a structure',
       },
       {
         name: 'editStructure',
-        description: 'Edit a structure'
+        description: 'Edit a structure',
       },
       {
         name: 'removeStructure',
-        description: 'Remove a structure'
-      }
-    ]
+        description: 'Remove a structure',
+      },
+    ],
   },
   departments: {
     name: 'departments',
@@ -204,26 +204,26 @@ export const moduleObjects = {
           'addDepartment',
           'showDepartment',
           'editDepartment',
-          'removeDepartment'
-        ]
+          'removeDepartment',
+        ],
       },
       {
         name: 'showDepartment',
-        description: 'Show a department'
+        description: 'Show a department',
       },
       {
         name: 'addDepartment',
-        description: 'Create a department'
+        description: 'Create a department',
       },
       {
         name: 'editDepartment',
-        description: 'Edit a department'
+        description: 'Edit a department',
       },
       {
         name: 'removeDepartment',
-        description: 'Remove a department'
-      }
-    ]
+        description: 'Remove a department',
+      },
+    ],
   },
   units: {
     name: 'units',
@@ -232,25 +232,25 @@ export const moduleObjects = {
       {
         name: 'unitsAll',
         description: 'All',
-        use: ['showUnit', 'addUnit', 'editUnit', 'removeUnit']
+        use: ['showUnit', 'addUnit', 'editUnit', 'removeUnit'],
       },
       {
         name: 'showUnit',
-        description: 'Show a unit'
+        description: 'Show a unit',
       },
       {
         name: 'addUnit',
-        description: 'Create a unit'
+        description: 'Create a unit',
       },
       {
         name: 'editUnit',
-        description: 'Edit a unit'
+        description: 'Edit a unit',
       },
       {
         name: 'removeUnit',
-        description: 'Remove a unit'
-      }
-    ]
+        description: 'Remove a unit',
+      },
+    ],
   },
   branches: {
     name: 'branches',
@@ -259,24 +259,291 @@ export const moduleObjects = {
       {
         name: 'branchesAll',
         description: 'All',
-        use: ['showBranch', 'addBranch', 'editBranch', 'removeBranch']
+        use: ['showBranch', 'addBranch', 'editBranch', 'removeBranch'],
       },
       {
         name: 'showBranch',
-        description: 'Show a branch'
+        description: 'Show a branch',
       },
       {
         name: 'addBranch',
-        description: 'Create a branch'
+        description: 'Create a branch',
       },
       {
         name: 'editBranch',
-        description: 'Edit a branch'
+        description: 'Edit a branch',
       },
       {
         name: 'removeBranch',
-        description: 'Remove a branch'
-      }
-    ]
-  }
+        description: 'Remove a branch',
+      },
+    ],
+  },
+  tags: {
+    name: 'tags',
+    description: 'Tags',
+    actions: [
+      {
+        name: 'tagsAll',
+        description: 'All',
+        use: ['showTags', 'manageTags'],
+      },
+      {
+        name: 'manageTags',
+        description: 'Manage tags',
+      },
+      {
+        name: 'showTags',
+        description: 'Show tags',
+      },
+    ],
+  },
+  logs: {
+    name: 'logs',
+    description: 'Logs',
+    actions: [
+      {
+        name: 'viewLogs',
+        description: 'View logs',
+      },
+    ],
+  },
+  segments: {
+    name: 'segments',
+    description: 'Segments',
+    actions: [
+      {
+        name: 'segmentsAll',
+        description: 'All',
+        use: ['showSegments', 'manageSegments'],
+      },
+      {
+        name: 'manageSegments',
+        description: 'Manage segments',
+      },
+      {
+        name: 'showSegments',
+        description: 'Show segments list',
+      },
+    ],
+  },
+  forms: {
+    name: 'forms',
+    description: 'Form',
+    actions: [
+      {
+        name: 'formsAll',
+        description: 'All',
+        use: ['showForms', 'manageForms'],
+      },
+      {
+        name: 'manageForms',
+        description: 'Manage forms',
+      },
+      {
+        name: 'showForms',
+        description: 'Show forms',
+      },
+    ],
+  },
+  companies: {
+    name: 'companies',
+    description: 'Companies',
+    actions: [
+      {
+        name: 'companiesAll',
+        description: 'All',
+        use: [
+          'companiesAdd',
+          'companiesEdit',
+          'companiesRemove',
+          'companiesMerge',
+          'showCompanies',
+          'showCompaniesMain',
+          'exportCompanies',
+        ],
+      },
+      {
+        name: 'companiesAdd',
+        description: 'Add companies',
+      },
+      {
+        name: 'companiesEdit',
+        description: 'Edit companies',
+      },
+      {
+        name: 'companiesRemove',
+        description: 'Remove companies',
+      },
+      {
+        name: 'companiesMerge',
+        description: 'Merge companies',
+      },
+      {
+        name: 'showCompanies',
+        description: 'Show companies',
+      },
+      {
+        name: 'showCompaniesMain',
+        description: 'Show companies main',
+      },
+      {
+        name: 'exportCompanies',
+        description: 'Export companies to xls file',
+      },
+    ],
+  },
+
+  customers: {
+    name: 'customers',
+    description: 'Customers',
+    actions: [
+      {
+        name: 'customersAll',
+        description: 'All',
+        use: [
+          'showCustomers',
+          'customersAdd',
+          'customersEdit',
+          'customersMerge',
+          'customersRemove',
+          'exportCustomers',
+          'customersChangeState',
+        ],
+      },
+      {
+        name: 'exportCustomers',
+        description: 'Export customers',
+      },
+      {
+        name: 'showCustomers',
+        description: 'Show customers',
+      },
+      {
+        name: 'customersAdd',
+        description: 'Add customer',
+      },
+      {
+        name: 'customersEdit',
+        description: 'Edit customer',
+      },
+      {
+        name: 'customersMerge',
+        description: 'Merge customers',
+      },
+      {
+        name: 'customersRemove',
+        description: 'Remove customers',
+      },
+      {
+        name: 'customersChangeState',
+        description: 'Change customer state',
+      },
+    ],
+  },
+
+  products: {
+    name: 'products',
+    description: 'Products',
+    actions: [
+      {
+        name: 'productsAll',
+        description: 'All',
+        use: [
+          'showProducts',
+          'manageProducts',
+          'productsMerge',
+          'removeProducts',
+        ],
+      },
+      {
+        name: 'manageProducts',
+        description: 'Manage products',
+      },
+      {
+        name: 'removeProducts',
+        description: 'Remove products',
+      },
+      {
+        name: 'showProducts',
+        description: 'Show products',
+      },
+      {
+        name: 'productsMerge',
+        description: 'Merge products',
+      },
+    ],
+  },
+
+  emailTemplates: {
+    name: 'emailTemplates',
+    description: 'Email template',
+    actions: [
+      {
+        name: 'emailTemplateAll',
+        description: 'All',
+        use: [
+          'showEmailTemplates',
+          'manageEmailTemplate',
+          'removeEmailTemplate',
+        ],
+      },
+      {
+        name: 'manageEmailTemplate',
+        description: 'Manage email template',
+      },
+      {
+        name: 'removeEmailTemplate',
+        description: 'Remove email template',
+      },
+      {
+        name: 'showEmailTemplates',
+        description: 'Show email templates',
+      },
+    ],
+  },
+
+  exchangeRates: {
+    name: 'exchangeRates',
+    description: 'ExchangeRates',
+    actions: [
+      {
+        name: 'exchangeRatesAll',
+        description: 'All',
+        use: ['showExchangeRates', 'manageExchangeRates'],
+      },
+      {
+        name: 'manageExchangeRates',
+        description: 'Manage exchange rates',
+      },
+      {
+        name: 'showExchangeRates',
+        description: 'Show exchange rates',
+      },
+    ],
+  },
+
+  clients: {
+    name: 'clients',
+    description: 'Clients',
+    actions: [
+      {
+        name: 'clientsAll',
+        description: 'All',
+        use: ['showClients', 'manageClients', 'removeClients'],
+      },
+      {
+        name: 'manageClients',
+        description: 'Manage clients',
+      },
+      {
+        name: 'removeClients',
+        description: 'Remove clients',
+      },
+      {
+        name: 'showClients',
+        description: 'Show clients',
+      },
+    ],
+  },
 };

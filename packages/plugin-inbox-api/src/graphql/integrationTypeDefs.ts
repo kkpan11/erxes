@@ -1,15 +1,9 @@
-export const types = ({ products, tags, forms }) => `
-  ${
-    forms
-      ? `
-      extend type Form @key(fields: "_id") {
-        _id: String! @external
-      }
-    `
-      : ''
+export const types = `
+  extend type Form @key(fields: "_id") {
+    _id: String! @external
   }
-
-  extend input InputRule {
+    
+  input InputRule {
     _id : String!,
     kind: String!,
     text: String!,
@@ -26,18 +20,20 @@ export const types = ({ products, tags, forms }) => `
     code: String
     formId: String
     tagIds: [String]
+    createdAt: Date
 
-    ${tags ? `tags: [Tag]` : ''}
-    
+    tags: [Tag]
+  
     leadData: JSON
     messengerData: JSON
     uiOptions: JSON
     isActive: Boolean
+    isConnected: Boolean
     webhookData: JSON
 
     brand: Brand
 
-    ${forms ? `form: Form` : ''}
+    form: Form
     channels: [Channel]
 
     websiteMessengerApps: [MessengerApp]
@@ -45,40 +41,10 @@ export const types = ({ products, tags, forms }) => `
     leadMessengerApps: [MessengerApp]
     healthStatus: JSON
 
-    bookingData: BookingData
-
     visibility: String
     departmentIds: [String]
-    data: JSON
 
     details: JSON
-  }
-
-  type BookingData {
-    name: String
-    image: Attachment
- 
-    description: String
-    userFilters: [String]
-    productCategoryId: String
-
-    style: JSON
-    displayBlock: JSON
-    viewCount: Int
-
-    categoryTree: JSON
-
-    ${
-      products
-        ? `
-        mainProductCategory: ProductCategory
-      `
-        : ''
-    }
-
-    navigationText: String
-    bookingFormText: String
-    productFieldIds: [String]
   }
 
   type integrationsTotalCount {
@@ -94,57 +60,13 @@ export const types = ({ products, tags, forms }) => `
     _id: String
     name: String
   }
-
-  input IntegrationLeadData {
-    loadType: String
-    successAction: String
-    fromEmail: String,
-    userEmailTitle: String
-    userEmailContent: String
-    adminEmails: [String]
-    adminEmailTitle: String
-    adminEmailContent: String
-    thankTitle: String
-    thankContent: String
-    redirectUrl: String
-    themeColor: String
-    callout: JSON,
-    rules: [InputRule]
-    isRequireOnce: Boolean
-    saveAsCustomer: Boolean
-    templateId: String
-    attachments: [AttachmentInput]
-    css: String
-    successImage: String
-    successImageSize: String
+  input BotPersistentMenuTypeMessenger {
+    _id: String
+    type: String
+    text: String
+    link: String
+    isEditing: Boolean
   }
-
-  input BookingStyleInput {
-    itemShape: String
-    widgetColor: String
-
-    productAvailable: String
-    baseFont: String
-
-    line: String
-    rows: Int
-    columns: Int
-    margin: Int
-  }
-
-  input IntegrationBookingData {
-    name: String
-    description: String
-    image: AttachmentInput
-    style: BookingStyleInput
-   
-    productCategoryId: String
-
-    navigationText: String
-    bookingFormText: String
-    productFieldIds: [String]
-  }
-
   input MessengerOnlineHoursSchema {
     _id: String
     day: String
@@ -155,7 +77,12 @@ export const types = ({ products, tags, forms }) => `
   input IntegrationLinks {
     twitter: String
     facebook: String
+    instagram:String
     youtube: String
+  }
+
+  input IntegrationExternalLinks {
+    url: String
   }
 
   input IntegrationMessengerData {
@@ -164,6 +91,10 @@ export const types = ({ products, tags, forms }) => `
     botEndpointUrl: String
     skillData: JSON
     botShowInitialMessage: Boolean
+    botCheck: Boolean
+    botGreetMessage: String
+    getStarted: Boolean
+    persistentMenus: [BotPersistentMenuTypeMessenger]
     availabilityMethod: String
     isOnline: Boolean,
     onlineHours: [MessengerOnlineHoursSchema]
@@ -173,6 +104,7 @@ export const types = ({ products, tags, forms }) => `
     messages: JSON
     knowledgeBaseTopicId: String
     links: IntegrationLinks
+    externalLinks: [IntegrationExternalLinks]
     supporterIds: [String]
     requireAuth: Boolean
     showChat: Boolean
@@ -214,6 +146,23 @@ export const queries = `
 `;
 
 export const mutations = `
+  integrationsCreateMessengerOnboarding(
+    brandName: String!,
+    languageCode: String
+    color: String
+    logo:String
+  ): Integration
+    
+    
+  integrationsEditMessengerOnboarding(
+    _id: String!,
+    brandId: String!,
+    brandName: String!,
+    languageCode: String
+    color: String
+    logo:String
+  ): Integration
+ 
   integrationsCreateMessengerIntegration(
     name: String!,
     brandId: String!,
@@ -237,27 +186,6 @@ export const mutations = `
     _id: String!,
     messengerData: IntegrationMessengerData): Integration
 
-  integrationsCreateLeadIntegration(
-    name: String!,
-    brandId: String!,
-    channelIds: [String]
-    visibility: String,
-    departmentIds: [String],
-    languageCode: String,
-    formId: String!,
-    leadData: IntegrationLeadData!): Integration
-
-  integrationsEditLeadIntegration(
-    _id: String!
-    name: String!,
-    brandId: String!,
-    visibility: String,
-    departmentIds: [String],
-    channelIds: [String]
-    languageCode: String,
-    formId: String!,
-    leadData: IntegrationLeadData!): Integration
-
   integrationsCreateExternalIntegration(
     kind: String!,
     name: String!,
@@ -276,26 +204,17 @@ export const mutations = `
 
   integrationsSendSms(integrationId: String!, content: String!, to: String!): JSON
 
-  integrationsCopyLeadIntegration(_id: String!): Integration
-
-  integrationsCreateBookingIntegration(
-    name: String!
-    brandId: String!
+  integrationsCreateLeadIntegration(
+    name: String!,
+    brandId: String!,
     channelIds: [String]
-    languageCode: String
-    formId: String
-    leadData: IntegrationLeadData
-    bookingData: IntegrationBookingData
-  ): Integration
+    ): Integration
 
-  integrationsEditBookingIntegration(
+  integrationsEditLeadIntegration(
     _id: String!
-    name: String!
-    brandId: String!
+    name: String!,
+    brandId: String!,
     channelIds: [String]
-    languageCode: String
-    formId: String
-    leadData: IntegrationLeadData
-    bookingData: IntegrationBookingData
   ): Integration
+  integrationsCopyLeadIntegration(_id: String!): Integration
 `;

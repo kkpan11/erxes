@@ -1,5 +1,4 @@
 import React from 'react';
-import  BookingMessage  from './BookingMessage';
 import { IMessage } from '../../../../../types';
 import AppMessage from './AppMessage';
 import FormMessage from './FormMessage';
@@ -10,10 +9,12 @@ type Props = {
   message: IMessage;
   isSameUser: boolean;
   conversationFirstMessage?: IMessage;
+  onEditMessageId?: (id: string) => void;
+  currentUserId?: string;
 };
 
 function Message(props: Props) {
-  const { message, isSameUser } = props;
+  const { message, isSameUser, onEditMessageId, currentUserId } = props;
 
   if (message.formWidgetData) {
     return <FormMessage {...props} />;
@@ -27,15 +28,13 @@ function Message(props: Props) {
     return <MessageBot message={message} />;
   }
 
-  if (message.bookingWidgetData) {
-    return <BookingMessage {...props} />;
-  }
-
   return (
     <SimpleMessage
       message={message}
       isStaff={message.userId ? true : false}
       isSameUser={isSameUser}
+      onEditMessageId={onEditMessageId}
+      currentUserId={currentUserId}
     />
   );
 }

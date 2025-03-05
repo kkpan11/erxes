@@ -13,6 +13,10 @@ const messageFields = `
     _id
     details {
       ${userDetailFields}
+      description
+      location
+      position
+      shortName
     }
   }
   content
@@ -20,10 +24,43 @@ const messageFields = `
   internal
   fromBot
   contentType
-  videoCallData {
-    url
-    status
+
+  engageData {
+    content
+    kind
+    sentAs
+    messageId
+    brandId
   }
+  botData
+  messengerAppData
+  attachments {
+    url
+    name
+    size
+    type
+  }
+`;
+const MESSAGE_FIELDS = `
+  _id
+  conversationId
+  customerId
+  user {
+    _id
+    details {
+      ${userDetailFields}
+      description
+      location
+      position
+      shortName
+    }
+  }
+  content
+  createdAt
+  internal
+  fromBot
+  contentType
+
   engageData {
     content
     kind
@@ -46,36 +83,56 @@ const userFields = `
   isActive
   details {
     ${userDetailFields}
-    shortName
+    description
     location
+    position
+    shortName
   }
   isOnline
 `;
 
-const conversationDetailQuery = `
+const conversationDetailQuery = (isDailycoEnabled: boolean) => `
   query ($_id: String, $integrationId: String!) {
     widgetsConversationDetail(_id: $_id, integrationId: $integrationId) {
       _id
       messages {
         ${messageFields}
+        ${
+          isDailycoEnabled
+            ? `
+        videoCallData {
+          url
+          status
+        }`
+            : ""
+        }
       }
 
       operatorStatus
       isOnline
+      persistentMenus
+      fromBot
+      botData
+      botGreetMessage
+      getStarted
       supporters {
         _id
         details {
           ${userDetailFields}
+          description
+          location
+          position
+          shortName
         }
       }
       participatedUsers {
         _id
         details {
           ${userDetailFields}
-          shortName
           description
-          position
           location
+          position
+          shortName
         }
         links
       }
@@ -89,10 +146,19 @@ const widgetExportMessengerDataQuery = `
   }
 `;
 
-const conversationMessageInserted = `
+const conversationMessageInserted = (isDailycoEnabled: boolean) => `
   subscription conversationMessageInserted($_id: String!) {
     conversationMessageInserted(_id: $_id) {
       ${messageFields}
+      ${
+        isDailycoEnabled
+          ? `
+      videoCallData {
+        url
+        status
+      }`
+          : ""
+      }
     }
   }
 `;
@@ -151,6 +217,10 @@ const allConversations = `
       participatedUsers {
         details {
           ${userDetailFields}
+          description
+          location
+          position
+          shortName
         }
       }
     }
@@ -221,7 +291,7 @@ const categoryFields = `
   _id
   title
   description
-  numOfArticles
+  numOfArticles(status: "publish")
   parentCategoryId
   icon
 `;
@@ -231,7 +301,7 @@ const getFaqCategoryQuery = `
     knowledgeBaseCategoryDetail(_id: $_id) {
       ${categoryFields}
       parentCategoryId
-      articles {
+      articles(status: "publish") {
         ${faqFields}
       }
     }
@@ -287,5 +357,7 @@ export default {
   faqSearchArticlesQuery,
   integrationsFetchApi,
   conversationBotTypingStatus,
-  getEngageMessage
+  getEngageMessage,
+  MESSAGE_FIELDS
 };
+export { MESSAGE_FIELDS };

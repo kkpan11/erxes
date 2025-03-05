@@ -1,21 +1,25 @@
-import * as classNames from 'classnames';
-import * as React from 'react';
-import * as RTG from 'react-transition-group';
-import { setLocalStorageItem } from '../../common';
-import { iconCall, iconVideo } from '../../icons/Icons';
+import * as RTG from "react-transition-group";
+import * as React from "react";
+import * as classNames from "classnames";
+
+import { IBotData, IMessage } from "../types";
 import {
   IIntegrationMessengerData,
   IIntegrationMessengerDataMessagesItem,
-  IIntegrationUiOptions
-} from '../../types';
-import { __, makeClickableLink, scrollTo } from '../../utils';
-import { MESSAGE_TYPES } from '../containers/AppContext';
-import { IBotData, IMessage } from '../types';
-import Message from './Message';
-import MessageBot from './MessageBot';
-import AccquireInformation from './AccquireInformation';
-import Bot from './bot/Bot';
-import { OPERATOR_STATUS } from './bot/constants';
+  IIntegrationUiOptions,
+} from "../../types";
+import { __, makeClickableLink, scrollTo } from "../../utils";
+import { iconCall, iconVideo } from "../../icons/Icons";
+import { useEffect, useRef, useState } from "react";
+
+import AccquireInformation from "./AccquireInformation";
+import Bot from "./bot/Bot";
+import { MESSAGE_TYPES } from "../constants";
+import Message from "./Message";
+import MessageBot from "./MessageBot";
+import { OPERATOR_STATUS } from "./bot/constants";
+import { connection } from "../connection";
+import { setLocalStorageItem } from "../../common";
 
 type Props = {
   messages: IMessage[];
@@ -43,104 +47,129 @@ type Props = {
   botTyping?: boolean;
   selectedSkill?: string | null;
   errorMessage: string;
+  isLoading: boolean;
 };
 
-type State = {
-  hideNotifyInput: boolean;
-  initialMessage: { botData: IBotData } | null;
-  skillResponse: string | null;
-};
+const MessagesList: React.FC<Props> = (props) => {
+  const {
+    uiOptions,
+    messengerData,
+    messages,
+    conversationId = "",
+    getBotInitialMessage,
+    saveGetNotified,
+    onSelectSkill,
+    isOnline,
+    color,
+    inputFocus,
+    isLoggedIn,
+    getColor,
+    toggleVideoCall,
+    replyAutoAnswer,
+    sendTypingInfo,
+    changeOperatorStatus,
+    operatorStatus,
+    sendMessage,
+    showVideoCallRequest,
+    botTyping,
+    selectedSkill,
+    errorMessage,
+    isLoading,
+  } = props;
 
-class MessagesList extends React.Component<Props, State> {
-  private node: HTMLDivElement | null = null;
-  private shouldScrollBottom: boolean = false;
+  const backgroundClass = classNames("erxes-messages-background", {
+    [`bg-${uiOptions.wallpaper}`]: uiOptions.wallpaper,
+  });
 
-  constructor(props: Props) {
-    super(props);
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const [hideNotifyInput, setHideNotifyInput] = useState(false);
+  const [initialMessage, setInitialMessage] = useState<{
+    botData: IBotData;
+  } | null>(null);
+  const [skillResponse, setSkillResponse] = useState<string | null>(null);
+  const [shouldScrollBottom, setShouldScrollBottom] = useState(false);
 
-    this.state = {
-      hideNotifyInput: false,
-      initialMessage: null,
-      skillResponse: null
-    };
-
-    this.onNotify = this.onNotify.bind(this);
-  }
-
-  componentDidMount() {
-    const {
-      messengerData,
-      messages,
-      conversationId = '',
-      getBotInitialMessage
-    } = this.props;
-
+  useEffect(() => {
     const newConversation =
       messages.length === 0 &&
-      (!conversationId || (conversationId || '').length === 0);
+      (!conversationId || (conversationId || "").length === 0);
 
-    if (messengerData.botShowInitialMessage && newConversation) {
-      getBotInitialMessage(initialMessage => {
-        this.setState({ initialMessage });
+    if (messengerData.botGreetMessage && newConversation) {
+      getBotInitialMessage((initialMessage) => {
+        setInitialMessage(initialMessage);
       });
     }
-
-    if (this.node) {
-      this.node.scrollTop = this.node.scrollHeight;
-      makeClickableLink('#erxes-messages a');
+    const node = nodeRef.current;
+    if (node) {
+      node.scrollTop = node.scrollHeight;
+      makeClickableLink("#erxes-messages a");
     }
-  }
+  }, []);
 
-  componentWillUpdate() {
-    const node = this.node;
+  useEffect(() => {
+    const node = nodeRef.current;
 
     if (node) {
-      this.shouldScrollBottom =
-        node.scrollHeight - (node.scrollTop + node.offsetHeight) < 20;
-    }
-  }
+      const handleScroll = () => {
+        setShouldScrollBottom(
+          node.scrollHeight - (node.scrollTop + node.offsetHeight) < 20
+        );
+      };
 
-  scrollBottom = () => {
-    if (this.node) {
-      scrollTo(this.node, this.node.scrollHeight, 300);
+      // Attach scroll event listener
+      node.addEventListener("scroll", handleScroll);
+
+      // Cleanup event listener on unmount
+      return () => {
+        node.removeEventListener("scroll", handleScroll);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    const node = nodeRef.current;
+
+    if (node && shouldScrollBottom) {
+      scrollTo(node, node.scrollHeight, 500);
+    }
+    makeClickableLink("#erxes-messages a");
+  }, [messages, shouldScrollBottom]);
+
+  const scrollBottom = () => {
+    const node = nodeRef.current;
+
+    if (node) {
+      scrollTo(node, node.scrollHeight, 300);
     }
   };
 
-  componentDidUpdate(prevProps: any) {
-    if (prevProps.messages !== this.props.messages) {
-      if (this.node && this.shouldScrollBottom) {
-        scrollTo(this.node, this.node.scrollHeight, 500);
-      }
-      makeClickableLink('#erxes-messages a');
-    }
-  }
-
-  onNotify = ({ type, value }: { type: string; value: string }) => {
-    this.props.saveGetNotified({ type, value }, () => {
-      this.setState({ hideNotifyInput: true }, () =>
-        setLocalStorageItem('hasNotified', 'true')
-      );
+  const onNotify = ({ type, value }: { type: string; value: string }) => {
+    saveGetNotified({ type, value }, () => {
+      setHideNotifyInput(true);
+      setLocalStorageItem("hasNotified", "true");
     });
   };
 
-  handleSkillSelect(skillId: string, response: string) {
-    this.setState({ skillResponse: response });
-    this.props.onSelectSkill(skillId);
-    this.props.inputFocus();
-  }
+  const handleSkillSelect = (skillId: string, response: string) => {
+    setSkillResponse(response);
+    onSelectSkill(skillId);
+    inputFocus();
+  };
 
-  renderBotGreetingMessage(messengerData: IIntegrationMessengerData) {
-    const { initialMessage } = this.state;
-
-    if (!messengerData.botShowInitialMessage || !initialMessage) {
+  const renderBotGreetingMessage = (
+    messengerData: IIntegrationMessengerData
+  ) => {
+    if (!messengerData.botGreetMessage) {
       return null;
     }
 
-    return this.renderSingleMessage(initialMessage);
-  }
+    return renderSingleMessage({
+      content: messengerData.botGreetMessage,
+      user: {},
+    });
+  };
 
-  renderAwayMessage(messengerData: IIntegrationMessengerData) {
-    const { isOnline } = this.props;
+  const renderAwayMessage = (messengerData: IIntegrationMessengerData) => {
     const messages =
       messengerData.messages || ({} as IIntegrationMessengerDataMessagesItem);
 
@@ -151,22 +180,20 @@ class MessagesList extends React.Component<Props, State> {
     return (
       <li className="erxes-spacial-message right away">{messages.away}</li>
     );
-  }
+  };
 
-  renderNotifyInput(messengerData: IIntegrationMessengerData) {
-    const { isLoggedIn, getColor, uiOptions } = this.props;
-
+  const renderNotifyInput = (messengerData: IIntegrationMessengerData) => {
     if (isLoggedIn()) {
       return null;
     }
 
-    if (this.state.hideNotifyInput) {
+    if (hideNotifyInput) {
       const messages =
         messengerData.messages || ({} as IIntegrationMessengerDataMessagesItem);
 
       return (
         <li className="erxes-spacial-message with-background">
-          <span> {messages.thank || __('Thank you') + '.'}</span>
+          <span> {messages.thank || __("Thank you") + "."}</span>
         </li>
       );
     }
@@ -174,17 +201,15 @@ class MessagesList extends React.Component<Props, State> {
     return (
       <li className="erxes-spacial-message with-background auth">
         <AccquireInformation
-          save={this.onNotify}
+          save={onNotify}
           color={getColor}
           loading={false}
-          textColor={uiOptions.textColor || '#fff'}
+          textColor={uiOptions.textColor || "#fff"}
         />
       </li>
     );
-  }
-
-  renderWelcomeMessage(messengerData: IIntegrationMessengerData) {
-    const { isOnline } = this.props;
+  };
+  const renderWelcomeMessage = (messengerData: IIntegrationMessengerData) => {
     const messages =
       messengerData.messages || ({} as IIntegrationMessengerDataMessagesItem);
 
@@ -193,26 +218,21 @@ class MessagesList extends React.Component<Props, State> {
     }
 
     return <li className="erxes-spacial-message right">{messages.welcome}</li>;
-  }
+  };
 
-  renderSkillOptionsMessage(messengerData: IIntegrationMessengerData) {
-    const { conversationId, messages } = this.props;
-
+  const renderSkillOptionsMessage = (
+    messengerData: IIntegrationMessengerData
+  ) => {
     const newConversation =
       messages.length === 0 &&
-      (!conversationId || (conversationId || '').length === 0);
+      (!conversationId || (conversationId || "").length === 0);
 
-    if (
-      !messengerData.skillData ||
-      !newConversation ||
-      this.props.selectedSkill
-    ) {
+    if (!messengerData.skillData || !newConversation || selectedSkill) {
       return null;
     }
 
     const { options = [] } = messengerData.skillData;
-    const { uiOptions } = this.props;
-    const { color, textColor = '#fff' } = uiOptions;
+    const { color, textColor = "#fff" } = uiOptions;
 
     if (options.length === 0) {
       return null;
@@ -222,7 +242,7 @@ class MessagesList extends React.Component<Props, State> {
       <div className="skill-content">
         {options.map((option, index) => {
           const handleClick = () =>
-            this.handleSkillSelect(option.skillId, option.response);
+            handleSkillSelect(option.skillId, option.response);
 
           return (
             <div key={index}>
@@ -238,41 +258,38 @@ class MessagesList extends React.Component<Props, State> {
         })}
       </div>
     );
-  }
+  };
 
-  renderSkillResponse = () => {
-    if (!this.props.selectedSkill || !this.state.skillResponse) {
+  const renderSkillResponse = () => {
+    if (!selectedSkill || !skillResponse) {
       return null;
     }
 
     return (
       <li className="from-customer">
-        <div className="erxes-message from-customer gray">
-          {this.state.skillResponse}
-        </div>
+        <div className="erxes-message from-customer gray">{skillResponse}</div>
       </li>
     );
   };
 
-  renderCallRequest() {
-    if (!this.props.showVideoCallRequest) {
+  const renderCallRequest = () => {
+    if (!showVideoCallRequest || !connection.enabledServices.dailyco) {
       return null;
     }
 
     const sendCallRequest = () => {
-      this.props.sendMessage(MESSAGE_TYPES.VIDEO_CALL_REQUEST, '');
+      sendMessage(MESSAGE_TYPES.VIDEO_CALL_REQUEST, "");
     };
 
-    const { uiOptions } = this.props;
-    const { color, textColor = '#fff' } = uiOptions;
+    const { color, textColor = "#fff" } = uiOptions;
 
     return (
       <div
         className="app-message-box call-request"
         style={{ borderColor: color }}
       >
-        <h5>{__('Audio and video call')}</h5>
-        <p>{__('You can contact the operator by voice or video!')}</p>
+        <h5>{__("Audio and video call")}</h5>
+        <p>{__("You can contact the operator by voice or video!")}</p>
         <div className="call-buttons">
           <button
             className="erxes-button"
@@ -281,7 +298,7 @@ class MessagesList extends React.Component<Props, State> {
           >
             {iconCall(textColor)}
             <span style={{ background: color, color: textColor }}>
-              {__('Audio call')}
+              {__("Audio call")}
             </span>
           </button>
           <button
@@ -295,37 +312,29 @@ class MessagesList extends React.Component<Props, State> {
         </div>
       </div>
     );
-  }
+  };
 
-  renderSingleMessage = (message: any) => {
-    const {
-      replyAutoAnswer,
-      sendTypingInfo,
-      uiOptions,
-      messengerData
-    } = this.props;
-
-    const { color, textColor = '#fff' } = uiOptions;
+  const renderSingleMessage = (message: any) => {
+    const { color, textColor = "#fff" } = uiOptions;
     const { botEndpointUrl } = messengerData;
     const _id: any = message._id;
 
     const messageProps = {
       color,
       textColor,
-      toggleVideo: this.props.toggleVideoCall,
+      toggleVideo: toggleVideoCall,
       sendTypingInfo,
       replyAutoAnswer,
-      ...message
+      ...message,
     };
 
-    const showBotMessage = botEndpointUrl && message.botData !== null;
-
+    const showBotMessage = message.botData && message.botData !== null;
     const content = showBotMessage ? (
       <MessageBot
         color={color}
         key={message._id}
         {...messageProps}
-        scrollBottom={this.scrollBottom}
+        scrollBottom={scrollBottom}
       />
     ) : (
       <Message key={message._id} {...messageProps} />
@@ -346,17 +355,15 @@ class MessagesList extends React.Component<Props, State> {
     return content;
   };
 
-  renderMessages() {
+  const renderMessages = () => {
     return (
       <RTG.TransitionGroup component={null}>
-        {this.props.messages.map(this.renderSingleMessage)}
+        {messages.map(renderSingleMessage)}
       </RTG.TransitionGroup>
     );
-  }
+  };
 
-  renderBotOperator() {
-    const { operatorStatus, conversationId, getColor } = this.props;
-
+  const renderBotOperator = () => {
     if (
       !operatorStatus ||
       !conversationId ||
@@ -370,19 +377,17 @@ class MessagesList extends React.Component<Props, State> {
         <div className="quick-replies">
           <div
             className="reply-button"
-            onClick={this.handleOperatorStatus}
+            onClick={handleOperatorStatus}
             style={{ borderColor: getColor }}
           >
-            {__('Contact with Operator')}
+            {__("Contact with Operator")}
           </div>
         </div>
       </div>
     );
-  }
+  };
 
-  renderTyping() {
-    const { botTyping } = this.props;
-
+  const renderTyping = () => {
     if (!botTyping) {
       return null;
     }
@@ -399,11 +404,9 @@ class MessagesList extends React.Component<Props, State> {
         </div>
       </li>
     );
-  }
+  };
 
-  renderErrorMessage() {
-    const { errorMessage } = this.props;
-
+  const renderErrorMessage = () => {
     if (!errorMessage) {
       return null;
     }
@@ -412,17 +415,15 @@ class MessagesList extends React.Component<Props, State> {
       <li className="from-customer">
         <div
           className="app-message-box spaced flexible"
-          style={{ borderColor: 'red' }}
+          style={{ borderColor: "red" }}
         >
           <div className="user-info horizontal">{errorMessage}</div>
         </div>
       </li>
     );
-  }
+  };
 
-  handleOperatorStatus = () => {
-    const { conversationId, changeOperatorStatus } = this.props;
-
+  const handleOperatorStatus = () => {
     if (!conversationId) {
       return;
     }
@@ -430,30 +431,29 @@ class MessagesList extends React.Component<Props, State> {
     return changeOperatorStatus(conversationId, OPERATOR_STATUS.OPERATOR);
   };
 
-  render() {
-    const { uiOptions, messengerData } = this.props;
-    const backgroundClass = classNames('erxes-messages-background', {
-      [`bg-${uiOptions.wallpaper}`]: uiOptions.wallpaper
-    });
-
-    return (
-      <div className={backgroundClass} ref={node => (this.node = node)}>
-        <ul id="erxes-messages" className="erxes-messages-list slide-in">
-          {this.renderBotGreetingMessage(messengerData)}
-          {this.renderWelcomeMessage(messengerData)}
-          {this.renderSkillOptionsMessage(messengerData)}
-          {this.renderSkillResponse()}
-          {this.renderCallRequest()}
-          {this.renderMessages()}
-          {this.renderBotOperator()}
-          {this.renderAwayMessage(messengerData)}
-          {this.renderNotifyInput(messengerData)}
-          {this.renderTyping()}
-          {this.renderErrorMessage()}
-        </ul>
-      </div>
-    );
-  }
-}
+  return (
+    <div className={backgroundClass} ref={nodeRef}>
+      <ul id="erxes-messages" className="erxes-messages-list slide-in">
+        {isLoading ? (
+          <div className="loader" />
+        ) : (
+          <>
+            {renderBotGreetingMessage(messengerData)}
+            {renderWelcomeMessage(messengerData)}
+            {renderSkillOptionsMessage(messengerData)}
+            {renderSkillResponse()}
+            {renderCallRequest()}
+            {renderMessages()}
+            {renderBotOperator()}
+            {renderAwayMessage(messengerData)}
+            {renderNotifyInput(messengerData)}
+            {renderTyping()}
+            {renderErrorMessage()}
+          </>
+        )}
+      </ul>
+    </div>
+  );
+};
 
 export default MessagesList;

@@ -1,11 +1,12 @@
 import {
   attachmentInput,
   attachmentType
-} from '@erxes/api-utils/src/commonTypeDefs';
+} from "@erxes/api-utils/src/commonTypeDefs";
 
-export const types = ({ tags, forms, contacts }) => `
+export const types = ({ contacts, dailyco, calls }) => `
   ${attachmentType}
   ${attachmentInput}
+
 
   extend type Customer @key(fields: "_id") {
     _id: String @external
@@ -16,14 +17,46 @@ export const types = ({ tags, forms, contacts }) => `
     _id: String! @external
   }
 
-  ${
-    tags
-      ? `
-      extend type Tag @key(fields: "_id") {
+
+  extend type Tag @key(fields: "_id") {
         _id: String! @external
+  }
+        
+
+  ${
+    dailyco
+      ? `
+      extend type VideoCallData {
+        url: String
+        name: String
+        status: String
+        recordingLinks: [String]
       }
     `
-      : ''
+      : ""
+  }
+
+  ${
+    calls
+      ? `
+        type CallHistoryData {
+        _id: String!
+        operatorPhone: String
+        customerPhone: String
+        callDuration: Int
+        callStartTime: Date
+        callEndTime: Date
+        callType: String
+        callStatus: String
+        sessionId: String
+        modifiedAt: Date
+        createdAt: Date
+        createdBy: String
+        modifiedBy: String
+        recordUrl: String
+      }
+    `
+      : ""
   }
 
   extend type User @key(fields: "_id") {
@@ -51,17 +84,17 @@ export const types = ({ tags, forms, contacts }) => `
     messages: [ConversationMessage]
     callProAudio: String
     
-    ${tags ? 'tags: [Tag]' : ''}
-    ${contacts ? 'customer: Customer' : ''}
+    tags: [Tag]
+    customer: Customer
     integration: Integration
     user: User
     assignedUser: User
     participatedUsers: [User]
+    readUsers: [User]
     participatorCount: Int
-    videoCallData: VideoCallData
+    ${dailyco ? "videoCallData: VideoCallData" : ""}
+    ${calls ? "callHistory: CallHistoryData" : ""}
     customFieldsData: JSON
-
-    bookingProductId: String
   }
 
   type EngageData {
@@ -82,20 +115,21 @@ export const types = ({ tags, forms, contacts }) => `
     conversationId: String
     internal: Boolean
     fromBot: Boolean
+    getStarted:Boolean
     botData: JSON
     customerId: String
     userId: String
     createdAt: Date
     isCustomerRead: Boolean
-    engageData: EngageData
+    engageData: EngageData 
     formWidgetData: JSON
     messengerAppData: JSON
+    botGreetMessage: String
     user: User
     customer: Customer
     mailData: MailData
-    videoCallData: VideoCallData
+    ${dailyco ? "videoCallData: VideoCallData" : ""}
     contentType: String
-    bookingWidgetData: JSON
     mid: String
   }
 
@@ -147,23 +181,10 @@ export const types = ({ tags, forms, contacts }) => `
     unreadCount: Int
   }
 
-  type VideoCallData {
-    url: String
-    name: String
-    status: String
-    recordingLinks: [String]
-  }
-
-  ${
-    forms
-      ? `
-        type InboxField {
-          customer: [Field]
-          conversation: [Field]
-          device: [Field]
-        }
-    `
-      : ''
+  type InboxField {
+    customer: [Field]
+    conversation: [Field]
+    device: [Field]
   }
 
   type UserConversationListResponse {
@@ -205,7 +226,6 @@ const convertParams = `
   itemId: String
   itemName: String
   stageId: String
-  bookingProductId: String
   customFieldsData: JSON
   priority: String
   assignedUserIds: [String]
@@ -222,10 +242,10 @@ const filterParams = `
   ${mutationFilterParams}
 `;
 
-export const queries = ({ forms }) => `
+export const queries = () => `
   conversationMessage(_id: String!): ConversationMessage
   
-  conversations(${filterParams}): [Conversation]
+  conversations(${filterParams}, skip: Int): [Conversation]
 
   conversationMessages(
     conversationId: String!
@@ -240,7 +260,7 @@ export const queries = ({ forms }) => `
   conversationDetail(_id: String!): Conversation
   conversationsGetLast(${filterParams}): Conversation
   conversationsTotalUnreadCount: Int
-  ${forms ? `inboxFields: InboxField` : ''}
+  inboxFields: InboxField
   userConversations(_id: String, perPage: Int): UserConversationListResponse
 `;
 
@@ -254,11 +274,19 @@ export const mutations = `
     contentType: String
     extraInfo: JSON
   ): ConversationMessage
+  conversationMessageEdit(
+    _id: String!,
+    content: String,
+    mentionedUserIds: [String],
+    internal: Boolean,
+    attachments: [AttachmentInput],
+    contentType: String
+    extraInfo: JSON
+  ): ConversationMessage
   conversationsAssign(conversationIds: [String]!, assignedUserId: String): [Conversation]
   conversationsUnassign(_ids: [String]!): [Conversation]
   conversationsChangeStatus(_ids: [String]!, status: String!): [Conversation]
   conversationMarkAsRead(_id: String): Conversation
-  conversationCreateVideoChatRoom(_id: String!): VideoCallData
   changeConversationOperator(_id: String! operatorStatus: String!): JSON
   conversationResolveAll(${mutationFilterParams}): Int
   conversationConvertToCard(${convertParams}): String

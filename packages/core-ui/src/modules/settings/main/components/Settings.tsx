@@ -10,8 +10,9 @@ import {
   MenusContainer,
   Row,
   RowTitle,
-  Divider
+  Divider,
 } from '@erxes/ui-settings/src/main/styles';
+import { getVersion } from '@erxes/ui/src/utils/core';
 
 const breadcrumb = [{ title: __('Settings'), link: '/settings' }];
 const permissionActions = [
@@ -19,14 +20,14 @@ const permissionActions = [
   'showPermissions',
   'showPermissionModules',
   'showPermissionActions',
-  'exportPermissions'
+  'exportPermissions',
 ];
 const teamPermissions = [
   'showUsers',
   'usersEdit',
   'usersInvite',
   'usersSetActiveStatus',
-  'exportUsers'
+  'exportUsers',
 ];
 
 class Settings extends React.PureComponent {
@@ -87,6 +88,7 @@ class Settings extends React.PureComponent {
   }
 
   render() {
+    const { VERSION } = getVersion();
     const content = (
       <MenusContainer id={'SettingsMain'}>
         <Row>
@@ -95,6 +97,30 @@ class Settings extends React.PureComponent {
             <span>{__('Set up your basic settings')}</span>
           </RowTitle>
           <div id={'SettingsGeneralSettings'}>
+            {VERSION && VERSION === 'saas' ? (
+              <>
+                {this.renderBox(
+                  'Organization settings',
+                  '/images/icons/erxes-35.png',
+                  '/settings/organizations',
+                  'editOrganizationInfo'
+                )}
+                <Box>
+                  <a
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    href="https://erxes.io/organizations"
+                  >
+                    <img
+                      src="/images/icons/erxes-24.svg"
+                      alt="Global Account"
+                    />
+                    <BoxName>{__('Global Account Profile')}</BoxName>
+                  </a>
+                </Box>
+              </>
+            ) : null}
+
             {this.renderBox(
               'System Configuration',
               '/images/icons/erxes-16.svg',
@@ -137,18 +163,88 @@ class Settings extends React.PureComponent {
               ['importHistories', 'removeImportHistories', 'importXlsFile']
             )}
             {this.renderBox(
-              'Apps',
-              '/images/icons/erxes-20.svg',
-              '/settings/apps',
+              "Apps (legacy)",
+              "/images/icons/erxes-20.svg",
+              "/settings/apps",
+              "",
+              []
+            )}
+            {this.renderBox(
+              "Apps",
+              "/images/icons/erxes-20.svg",
+              "/settings/clients",
+              "",
+              []
+            )}
+            {this.renderBox(
+              "Structure",
+              "/images/icons/erxes-15.svg",
+              "/settings/structure",
+              "usersAll",
+              teamPermissions
+            )}
+
+            {this.renderBox(
+              'Tags',
+              '/images/icons/erxes-18.svg',
+              '/settings/tags',
+              'tagsAll',
+              ['showTags', 'manageTags']
+            )}
+
+            {this.renderBox(
+              'Exchange Rates',
+              '/images/icons/erxes-25.png',
+              '/settings/exchangeRates',
+              'exchangeRatesAll',
+              ['showExchangeRates', 'manageExchangeRates']
+            )}
+
+            {this.renderBox(
+              'System Logs',
+              '/images/icons/erxes-33.png',
+              '/settings/logs',
+              '',
+              []
+            )}
+
+            {this.renderBox(
+              'Properties',
+              '/images/icons/erxes-01.svg',
+              '/settings/properties',
+              'formsAll',
+              ['showForms', 'manageForms']
+            )}
+
+            {this.renderBox(
+              'Email Delivery Logs',
+              '/images/icons/erxes-27.png',
+              '/settings/emailDelivery',
               '',
               []
             )}
             {this.renderBox(
-              'Structure',
-              '/images/icons/erxes-23.svg',
-              '/settings/structure',
-              'usersAll',
-              teamPermissions
+              'Configs of Products',
+              '/images/icons/erxes-07.svg',
+              '/settings/uoms-manage',
+              '',
+              ['showProducts', 'manageProducts']
+            )}
+
+            {this.renderBox(
+              'Product and services',
+              '/images/icons/erxes-31.png',
+              '/settings/product-service/',
+              '',
+              ['showProducts', 'manageProducts']
+            )}
+
+            {this.renderBox(
+              'Email Templates',
+              '/images/icons/erxes-09.svg',
+              '/settings/email-templates',
+              'emailTemplateAll',
+              ['showEmailTemplates']
             )}
           </div>
         </Row>

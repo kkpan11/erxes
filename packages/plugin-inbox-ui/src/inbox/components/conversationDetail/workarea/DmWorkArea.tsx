@@ -1,26 +1,26 @@
-import React from 'react';
-
-import { isEnabled } from '@erxes/ui/src/utils/core';
-import { IAttachmentPreview } from '@erxes/ui/src/types';
-import Message from '@erxes/ui-inbox/src/inbox/components/conversationDetail/workarea/conversation/messages/Message';
-import { ContenFooter, ContentBox } from '@erxes/ui/src/layout/styles';
 import {
   AddMessageMutationVariables,
   IConversation,
-  IMessage
+  IMessage,
 } from '@erxes/ui-inbox/src/inbox/types';
-import MailConversation from '@erxes/ui-inbox/src/inbox/components/conversationDetail/workarea/mail/MailConversation';
-import { __ } from 'coreui/utils';
-
+import { ContenFooter, ContentBox } from '@erxes/ui/src/layout/styles';
 import {
   ConversationWrapper,
+  MailSubject,
   RenderConversationWrapper,
-  MailSubject
 } from './styles';
-import TypingIndicator from './TypingIndicator';
+
 import ActionBar from './ActionBar';
-import RespondBox from '../../../containers/conversationDetail/RespondBox';
 import CallPro from './callpro/Callpro';
+import GrandStream from './grandStream/GrandStream';
+import { IAttachmentPreview } from '@erxes/ui/src/types';
+import MailConversation from '@erxes/ui-inbox/src/inbox/components/conversationDetail/workarea/mail/MailConversation';
+import Message from '@erxes/ui-inbox/src/inbox/components/conversationDetail/workarea/conversation/messages/Message';
+import React from 'react';
+import RespondBox from '../../../containers/conversationDetail/RespondBox';
+import TypingIndicator from './TypingIndicator';
+import { __ } from 'coreui/utils';
+import { IUser } from '@erxes/ui/src/auth/types';
 
 type Props = {
   queryParams?: any;
@@ -28,6 +28,7 @@ type Props = {
   currentConversationId?: string;
   currentConversation: IConversation;
   conversationMessages: IMessage[];
+  currentUser: IUser;
   loading: boolean;
   typingInfo?: string;
   loadMoreMessages: () => void;
@@ -35,7 +36,7 @@ type Props = {
     variables,
     optimisticResponse,
     callback,
-    kind
+    kind,
   }: {
     variables: AddMessageMutationVariables;
     optimisticResponse: any;
@@ -49,6 +50,7 @@ type Props = {
 
 type State = {
   attachmentPreview: IAttachmentPreview;
+  editMessageId?: string;
 };
 
 export default class WorkArea extends React.Component<Props, State> {
@@ -57,7 +59,10 @@ export default class WorkArea extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = { attachmentPreview: null };
+    this.state = {
+      attachmentPreview: null,
+      editMessageId: '',
+    };
 
     this.node = React.createRef();
   }
@@ -120,7 +125,7 @@ export default class WorkArea extends React.Component<Props, State> {
     }
   };
 
-  setAttachmentPreview = attachmentPreview => {
+  setAttachmentPreview = (attachmentPreview) => {
     this.setState({ attachmentPreview });
   };
 
@@ -141,12 +146,16 @@ export default class WorkArea extends React.Component<Props, State> {
     return null;
   };
 
+  onEditMessageId = (id) => {
+    this.setState({ editMessageId: id });
+  };
+
   renderMessages(messages: IMessage[], conversationFirstMessage: IMessage) {
     const rows: React.ReactNode[] = [];
 
     let tempId;
 
-    messages.forEach(message => {
+    messages.forEach((message) => {
       rows.push(
         <Message
           isSameUser={
@@ -157,7 +166,9 @@ export default class WorkArea extends React.Component<Props, State> {
           conversationFirstMessage={conversationFirstMessage}
           message={message}
           key={message._id}
-        />
+          onEditMessageId={this.onEditMessageId}
+          currentUserId={this.props.currentUser?._id}
+        />,
       );
 
       tempId = message.userId ? message.userId : message.customerId;
@@ -201,8 +212,16 @@ export default class WorkArea extends React.Component<Props, State> {
       return (
         <>
           {content}
-          {isEnabled('internalnotes') &&
-            this.renderMessages(messages, firstMessage)}
+          {this.renderMessages(messages, firstMessage)}
+        </>
+      );
+    }
+
+    if (kind === 'calls') {
+      return (
+        <>
+          <GrandStream conversation={currentConversation} />
+          {this.renderMessages(messages, firstMessage)}
         </>
       );
     }
@@ -217,7 +236,7 @@ export default class WorkArea extends React.Component<Props, State> {
       typingInfo,
       refetchMessages,
       refetchDetail,
-      content
+      conversationMessages,
     } = this.props;
 
     const { kind } = currentConversation.integration;
@@ -225,28 +244,46 @@ export default class WorkArea extends React.Component<Props, State> {
     const showInternal =
       this.isMailConversation(kind) ||
       kind === 'lead' ||
-      kind === 'booking' ||
       kind === 'imap' ||
+      kind === 'calls' ||
       kind === 'webhook';
 
     const typingIndicator = typingInfo ? (
       <TypingIndicator>{typingInfo}</TypingIndicator>
     ) : null;
 
+    let editMessage;
+    if (showInternal && this.state.editMessageId) {
+      const messages = (conversationMessages || []).slice();
+      editMessage = messages.find(
+        (message) => message._id === this.state.editMessageId,
+      );
+    }
+
+    const onAddMessage = (props) => {
+      if (kind === 'calls' && showInternal && editMessage) {
+        this.onEditMessageId('');
+      }
+      addMessage({ ...props });
+    };
+
     const respondBox = () => {
       const data = (
         <RespondBox
-          showInternal={isEnabled('internalnotes') ? showInternal : false}
+          showInternal={showInternal}
+          disableInternalState={showInternal ? true : false}
           conversation={currentConversation}
           setAttachmentPreview={this.setAttachmentPreview}
-          addMessage={addMessage}
+          addMessage={onAddMessage}
           refetchMessages={refetchMessages}
           refetchDetail={refetchDetail}
+          editMessage={editMessage}
+          onEditMessageId={this.onEditMessageId}
         />
       );
 
       if (kind === 'imap') {
-        return isEnabled('internalnotes') && data;
+        return data;
       }
 
       return data;
@@ -259,7 +296,7 @@ export default class WorkArea extends React.Component<Props, State> {
         <ContentBox>
           <ConversationWrapper
             id="conversationWrapper"
-            innerRef={this.node}
+            ref={this.node}
             onScroll={this.onScroll}
           >
             <RenderConversationWrapper>

@@ -1,16 +1,15 @@
-import { Document, Schema } from 'mongoose';
+import { Document, Schema } from "mongoose";
 import {
-  attachmentSchema,
   IRule,
+  attachmentSchema,
   ruleSchema
-} from '@erxes/api-utils/src/definitions/common';
+} from "@erxes/api-utils/src/definitions/common";
 import {
   LEAD_LOAD_TYPES,
   LEAD_SUCCESS_ACTIONS,
   MESSENGER_DATA_AVAILABILITY
-} from './constants';
-
-import { field, schemaHooksWrapper } from './utils';
+} from "./constants";
+import { field, schemaHooksWrapper } from "./utils";
 
 export interface ISubmission extends Document {
   customerId: string;
@@ -20,6 +19,7 @@ export interface ISubmission extends Document {
 export interface ILink {
   twitter?: string;
   facebook?: string;
+  instagram?: string;
   youtube?: string;
 }
 
@@ -43,10 +43,20 @@ export interface IMessengerDataMessagesItem {
 export interface IMessageDataMessages {
   [key: string]: IMessengerDataMessagesItem;
 }
-
+type BotPersistentMenuTypeMessenger = {
+  _id: string;
+  type: string;
+  text: string;
+  link: string;
+  isEditing?: boolean;
+};
 export interface IMessengerData {
   botEndpointUrl?: string;
   botShowInitialMessage?: boolean;
+  botCheck?: boolean;
+  botGreetMessage?: string;
+  persistentMenus?: BotPersistentMenuTypeMessenger[];
+  getStarted?: boolean;
   skillData?: {
     typeId: string;
     options: Array<{
@@ -65,6 +75,7 @@ export interface IMessengerData {
   showTimezone?: boolean;
   messages?: IMessageDataMessages;
   links?: ILink;
+  externalLinks?: IExternalLink[];
   showChat?: boolean;
   showLauncher?: boolean;
   hideWhenOffline?: boolean;
@@ -81,6 +92,7 @@ export interface ICallout extends Document {
   buttonText?: string;
   featuredImage?: string;
   skip?: boolean;
+  calloutImgSize?: string;
 }
 
 export interface IAttachment {
@@ -88,36 +100,6 @@ export interface IAttachment {
   url: string;
   size: number;
   type: string;
-}
-
-export interface IBookingStyle {
-  itemShape?: string;
-  widgetColor?: string;
-
-  productAvailable?: string;
-  baseFont?: string;
-
-  line?: string;
-  rows?: number;
-  columns?: number;
-  margin?: number;
-}
-
-export interface IBookingData {
-  name?: string;
-  description?: string;
-  image?: IAttachment;
-  style?: IBookingStyle;
-  userFilters?: string[];
-  productCategoryId?: string;
-  viewCount?: number;
-  navigationText?: string;
-  bookingFormText?: string;
-  productFieldIds?: string[];
-}
-
-export interface IBookingDataDocument extends IBookingData, Document {
-  viewCount?: number;
 }
 
 export interface ILeadData {
@@ -144,6 +126,7 @@ export interface ILeadData {
   css?: string;
   successImage?: string;
   successImageSize?: string;
+  verifyEmail?: boolean;
 }
 
 export interface IWebhookData {
@@ -178,10 +161,14 @@ export interface IIntegration {
   messengerData?: IMessengerData;
   uiOptions?: IUiOptions;
   isActive?: boolean;
+  isConnected?: boolean;
   channelIds?: string[];
-  bookingData?: IBookingData;
   departmentIds?: string[];
   visibility?: string;
+}
+
+export interface IExternalLink {
+  url: String;
 }
 
 export interface IIntegrationDocument extends IIntegration, Document {
@@ -193,7 +180,6 @@ export interface IIntegrationDocument extends IIntegration, Document {
   messengerData?: IMessengerDataDocument;
   webhookData?: IWebhookData;
   uiOptions?: IUiOptionsDocument;
-  bookingData?: IBookingDataDocument;
 }
 
 // subdocument schema for MessengerOnlineHours
@@ -206,12 +192,24 @@ const messengerOnlineHoursSchema = new Schema(
   { _id: false }
 );
 
+const persistentMenuSchema = new Schema({
+  _id: { type: String },
+  text: { type: String },
+  type: { type: String },
+  link: { type: String, optional: true },
+  isEditing: { type: Boolean }
+});
+
 // subdocument schema for MessengerData
 const messengerDataSchema = new Schema(
   {
     skillData: field({ type: Object, optional: true }),
     botEndpointUrl: field({ type: String }),
     botShowInitialMessage: field({ type: Boolean }),
+    getStarted: field({ type: Boolean }),
+    botCheck: field({ type: Boolean }),
+    botGreetMessage: field({ type: String }),
+    persistentMenus: field({ type: [persistentMenuSchema] }), // Corrected to an array
     supporterIds: field({ type: [String] }),
     notifyCustomer: field({ type: Boolean }),
     availabilityMethod: field({
@@ -237,9 +235,11 @@ const messengerDataSchema = new Schema(
     messages: field({ type: Object, optional: true }),
     links: {
       facebook: String,
+      instagram: String,
       twitter: String,
       youtube: String
     },
+    externalLinks: field({ type: Object, optional: true }),
     requireAuth: field({ type: Boolean, default: true }),
     showChat: field({ type: Boolean, default: true }),
     showLauncher: field({ type: Boolean, default: true }),
@@ -253,15 +253,20 @@ const messengerDataSchema = new Schema(
 // schema for lead's callout component
 export const calloutSchema = new Schema(
   {
-    title: field({ type: String, optional: true, label: 'Title' }),
-    body: field({ type: String, optional: true, label: 'Body' }),
-    buttonText: field({ type: String, optional: true, label: 'Button text' }),
+    title: field({ type: String, optional: true, label: "Title" }),
+    body: field({ type: String, optional: true, label: "Body" }),
+    buttonText: field({ type: String, optional: true, label: "Button text" }),
+    calloutImgSize: field({
+      type: String,
+      optional: true,
+      label: "Callout image size"
+    }),
     featuredImage: field({
       type: String,
       optional: true,
-      label: 'Featured image'
+      label: "Featured image"
     }),
-    skip: field({ type: Boolean, optional: true, label: 'Skip' })
+    skip: field({ type: Boolean, optional: true, label: "Skip" })
   },
   { _id: false }
 );
@@ -282,114 +287,119 @@ export const leadDataSchema = new Schema(
     loadType: field({
       type: String,
       enum: LEAD_LOAD_TYPES.ALL,
-      label: 'Load type'
+      label: "Load type"
     }),
     successAction: field({
       type: String,
       enum: LEAD_SUCCESS_ACTIONS.ALL,
       optional: true,
-      label: 'Success action'
+      label: "Success action"
     }),
     fromEmail: field({
       type: String,
       optional: true,
-      label: 'From email'
+      label: "From email"
     }),
     userEmailTitle: field({
       type: String,
       optional: true,
-      label: 'User email title'
+      label: "User email title"
     }),
     userEmailContent: field({
       type: String,
       optional: true,
-      label: 'User email content'
+      label: "User email content"
     }),
     adminEmails: field({
       type: [String],
       optional: true,
-      label: 'Admin emails'
+      label: "Admin emails"
     }),
     adminEmailTitle: field({
       type: String,
       optional: true,
-      label: 'Admin email title'
+      label: "Admin email title"
     }),
     adminEmailContent: field({
       type: String,
       optional: true,
-      label: 'Admin email content'
+      label: "Admin email content"
     }),
     thankTitle: field({
       type: String,
       optional: true,
-      label: 'Thank content title'
+      label: "Thank content title"
     }),
     thankContent: field({
       type: String,
       optional: true,
-      label: 'Thank content'
+      label: "Thank content"
     }),
     redirectUrl: field({
       type: String,
       optional: true,
-      label: 'Redirect URL'
+      label: "Redirect URL"
     }),
     themeColor: field({
       type: String,
       optional: true,
-      label: 'Theme color code'
+      label: "Theme color code"
     }),
     callout: field({
       type: calloutSchema,
       optional: true,
-      label: 'Callout'
+      label: "Callout"
     }),
     viewCount: field({
       type: Number,
       optional: true,
-      label: 'View count'
+      label: "View count"
     }),
     contactsGathered: field({
       type: Number,
       optional: true,
-      label: 'Contacts gathered'
+      label: "Contacts gathered"
     }),
     rules: field({
       type: [ruleSchema],
       optional: true,
-      label: 'Rules'
+      label: "Rules"
     }),
     isRequireOnce: field({
       type: Boolean,
       optional: true,
-      label: 'Do not show again if already filled out'
+      label: "Do not show again if already filled out"
     }),
     saveAsCustomer: field({
       type: Boolean,
       optional: true,
-      label: 'Save as customer'
+      label: "Save as customer"
     }),
     templateId: field({
       type: String,
       optional: true,
-      label: 'Template'
+      label: "Template"
     }),
-    attachments: field({ type: Object, optional: true, label: 'Attachments' }),
+    attachments: field({ type: Object, optional: true, label: "Attachments" }),
     css: field({
       type: String,
       optional: true,
-      label: 'Custom CSS'
+      label: "Custom CSS"
     }),
     successImage: field({
       type: String,
       optional: true,
-      label: 'Success image'
+      label: "Success image"
     }),
     successImageSize: field({
       type: String,
       optional: true,
-      label: 'Success image size'
+      label: "Success image size"
+    }),
+    verifyEmail: field({
+      type: Boolean,
+      optional: true,
+      label: "Verify email"
     })
   },
   { _id: false }
@@ -415,98 +425,40 @@ const webhookDataSchema = new Schema(
   { _id: false }
 );
 
-export const bookingStyleSchema = new Schema(
-  {
-    itemShape: field({ type: String, optional: true, label: 'Shape' }),
-    widgetColor: field({ type: String, label: 'Widget color' }),
-
-    productAvailable: field({ type: String, label: 'Product available' }),
-    baseFont: field({ type: String, optional: true, label: 'Font' }),
-
-    line: field({ type: String, optional: true, label: 'Line' }),
-    columns: field({ type: Number, optional: true, label: 'Columns' }),
-    rows: field({ type: Number, optional: true, label: 'Rows' }),
-    margin: field({ type: Number, optional: true, label: 'Margin' })
-  },
-  { _id: false }
-);
-
-const bookingSchema = new Schema(
-  {
-    name: field({ type: String }),
-    description: field({ type: String }),
-    image: field({ type: attachmentSchema }),
-
-    style: field({ type: bookingStyleSchema }),
-    userFilters: field({ type: [String], optional: true, label: 'Filter' }),
-
-    productCategoryId: field({
-      type: String,
-      optional: true,
-      label: 'Product category'
-    }),
-    viewCount: field({
-      type: Number,
-      optional: true,
-      label: 'View count'
-    }),
-    navigationText: field({
-      type: String,
-      optional: true,
-      label: 'Navigation text'
-    }),
-    bookingFormText: field({
-      type: String,
-      optional: true,
-      label: 'Booking form text'
-    }),
-    productFieldIds: field({
-      type: [String],
-      optional: true,
-      label: 'Custom fields'
-    })
-  },
-  { _id: false }
-);
-
 // schema for integration document
 export const integrationSchema = schemaHooksWrapper(
   new Schema({
     _id: field({ pkey: true }),
-    createdUserId: field({ type: String, label: 'Created by' }),
+    createdUserId: field({ type: String, label: "Created by" }),
 
     kind: field({
       type: String,
-      label: 'Kind'
+      label: "Kind"
     }),
+    createdAt: field({ type: "Date", label: "Created at" }),
 
-    name: field({ type: String, label: 'Name' }),
-    brandId: field({ type: String, label: 'Brand' }),
+    name: field({ type: String, label: "Name" }),
+    brandId: field({ type: String, label: "Brand" }),
 
-    visibility: field({ type: String, label: 'Visibility' }),
-    departmentIds: field({ type: [String], label: 'Departments' }),
-
-    languageCode: field({
-      type: String,
-      optional: true,
-      label: 'Language code'
-    }),
-    tagIds: field({ type: [String], label: 'Tags', index: true }),
-    formId: field({ type: String, label: 'Form' }),
-    leadData: field({ type: leadDataSchema, label: 'Lead data' }),
+    tagIds: field({ type: [String], label: "Tags", index: true }),
+    formId: field({ type: String, label: "Form" }),
     isActive: field({
       type: Boolean,
       optional: true,
       default: true,
-      label: 'Is active'
+      label: "Is active"
+    }),
+    isConnected: field({
+      type: Boolean,
+      optional: true,
+      default: false,
+      label: "Is connect"
     }),
     webhookData: field({ type: webhookDataSchema }),
     // TODO: remove
     formData: field({ type: leadDataSchema }),
     messengerData: field({ type: messengerDataSchema }),
-    uiOptions: field({ type: uiOptionsSchema }),
-
-    bookingData: field({ type: bookingSchema })
+    uiOptions: field({ type: uiOptionsSchema })
   }),
-  'erxes_integrations'
+  "erxes_integrations"
 );

@@ -1,25 +1,31 @@
 import { AttachmentWrapper, Meta } from '@erxes/ui/src/components/Attachment';
+import { PopoverList } from '@erxes/ui/src/components/filterableList/styles';
 import { colors, dimensions } from '@erxes/ui/src/styles';
 import { darken, rgba } from '@erxes/ui/src/styles/ecolor';
 import styled, { css } from 'styled-components';
+
 import styledTS from 'styled-components-ts';
 
-const MessageContent = styledTS<{ internal?: boolean; staff?: boolean }>(
-  styled.div
-)`
+const MessageContent = styledTS<{
+  $internal?: boolean;
+  $staff?: boolean;
+  $isEditable?: boolean;
+}>(styled.div)`
   padding: ${dimensions.unitSpacing}px ${dimensions.coreSpacing}px;
   border-radius: 20px;
   border-bottom-left-radius: 2px;
   background: ${colors.colorWhite};
-  background: ${props =>
-    props.internal ? colors.bgInternal : props.staff && colors.colorSecondary};
+  background: ${(props) =>
+    props.$internal
+      ? colors.bgInternal
+      : props.$staff && colors.colorSecondary};
   word-break: break-word;
   box-shadow: 0 1px 1px 0 ${colors.darkShadow};
-  color: ${props => props.staff && !props.internal && colors.colorWhite};
+  color: ${(props) => props.$staff && !props.$internal && colors.colorWhite};
   text-align: left;
 
-  ${props =>
-    props.staff &&
+  ${(props) =>
+    props.$staff &&
     css`
       border-bottom-right-radius: 2px;
       border-bottom-left-radius: 20px;
@@ -28,10 +34,19 @@ const MessageContent = styledTS<{ internal?: boolean; staff?: boolean }>(
         color: ${rgba(colors.colorWhite, 0.9)};
       }
     `};
+  ${(props) =>
+    props.$internal &&
+    props.$isEditable &&
+    css`
+      display: inline-flex;
+      flex-direction: row;
+    `};
 
   a {
-    color: ${props =>
-      props.staff && !props.internal ? colors.colorWhite : colors.linkPrimary};
+    color: ${(props) =>
+      props.$staff && !props.$internal
+        ? colors.colorWhite
+        : colors.linkPrimary};
     text-decoration: underline;
   }
 
@@ -41,6 +56,11 @@ const MessageContent = styledTS<{ internal?: boolean; staff?: boolean }>(
 
   > span {
     display: block;
+  }
+
+  .mention {
+    font-weight: bold;
+    display: inline-block;
   }
 
   img {
@@ -68,10 +88,10 @@ const MessageContent = styledTS<{ internal?: boolean; staff?: boolean }>(
   }
 `;
 
-const MessageBody = styledTS<{ staff?: boolean }>(styled.div)`
-  margin: ${props => (props.staff ? '0 55px 0 0' : '0 0 0 55px')};
+const MessageBody = styledTS<{ $staff?: boolean }>(styled.div)`
+  margin: ${(props) => (props.$staff ? '0 55px 0 0' : '0 0 0 55px')};
   display: flex;
-  flex-direction: ${props => (props.staff ? 'row-reverse' : 'row')};
+  flex-direction: ${(props) => (props.$staff ? 'row-reverse' : 'row')};
   align-items: center;
 
   footer {
@@ -90,11 +110,11 @@ const MessageBody = styledTS<{ staff?: boolean }>(styled.div)`
 `;
 
 const MessageItem = styledTS<{
-  isSame?: boolean;
-  staff?: boolean;
-  isBot?: boolean;
+  $isSame?: boolean;
+  $staff?: boolean;
+  $isBot?: boolean;
 }>(styled.div)`
-  margin-top: ${props => (props.isSame ? dimensions.unitSpacing - 5 : 20)}px;
+  margin-top: ${(props) => (props.$isSame ? dimensions.unitSpacing - 5 : 20)}px;
   padding-right: 17%;
   display: flex;
   flex-direction: row;
@@ -103,12 +123,12 @@ const MessageItem = styledTS<{
 
   > span {
     position: absolute;
-    right: ${props => props.staff && '0'};
+    right: ${(props) => props.$staff && '0'};
     bottom: 0;
   }
 
-  ${props =>
-    props.isBot &&
+  ${(props) =>
+    props.$isBot &&
     css`
       padding-right: 0;
 
@@ -122,8 +142,8 @@ const MessageItem = styledTS<{
       }
     `};
 
-  ${props => {
-    if (!props.staff) {
+  ${(props) => {
+    if (!props.$staff) {
       return '';
     }
 
@@ -137,14 +157,14 @@ const MessageItem = styledTS<{
 
   &.same {
     ${MessageContent} {
-      border-top-left-radius: ${props => !props.staff && '2px'};
-      border-top-right-radius: ${props => props.staff && '2px'};
+      border-top-left-radius: ${(props) => !props.$staff && '2px'};
+      border-top-right-radius: ${(props) => props.$staff && '2px'};
     }
 
     &:last-of-type {
       ${MessageContent} {
-        border-bottom-right-radius: ${props => props.staff && '20px'};
-        border-bottom-left-radius: ${props => !props.staff && '20px'};
+        border-bottom-right-radius: ${(props) => props.$staff && '20px'};
+        border-bottom-left-radius: ${(props) => !props.$staff && '20px'};
       }
     }
   }
@@ -187,6 +207,16 @@ const FormTable = styled.div`
 
   table tr td {
     word-break: break-word;
+  }
+
+  footer {
+    flex-shrink: 0;
+    font-size: 11px;
+    float: right;
+
+    color: ${colors.colorCoreLightGray};
+    margin-left: 10px;
+    cursor: pointer;
   }
 `;
 
@@ -305,7 +335,7 @@ const FieldWrapper = styledTS<{ column?: number }>(styled.div)`
     }
   }
 
-${props =>
+${(props) =>
   props.column &&
   css`
     width: ${100 / props.column}%;
@@ -324,6 +354,10 @@ const ProductItem = styledTS(styled.div)`
   }
 `;
 
+export const ActionList = styledTS(styled.div)`
+  margin-left: 5px;
+`;
+
 export {
   MessageItem,
   MessageBody,
@@ -337,5 +371,5 @@ export {
   CellWrapper,
   FieldWrapper,
   FormMessageInput,
-  ProductItem
+  ProductItem,
 };

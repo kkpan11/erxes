@@ -9,6 +9,7 @@ export interface IModels {
   Users: any;
   Permissions: any;
   Apps: any;
+  Clients: any;
 }
 
 export interface IContext extends IMainContext {
@@ -16,16 +17,15 @@ export interface IContext extends IMainContext {
   models: IModels;
 }
 
-export let models: IModels | null = null;
-
 export const loadClasses = (db: mongoose.Connection): IModels => {
-  models = {} as IModels;
+  const models = {} as IModels;
 
   models.Users = db.model('users', userSchema);
   models.Permissions = db.model('permissions', permissionSchema);
   models.Apps = db.model('apps', appSchema);
+  models.Clients = db.model('clients', appSchema);
 
   return models;
 };
 
-export const generateModels = createGenerateModels<IModels>(models, loadClasses);
+export const generateModels = createGenerateModels<IModels>(loadClasses);
